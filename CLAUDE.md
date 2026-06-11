@@ -20,19 +20,23 @@ A web app for construction companies to track worker certifications and CSCS car
 
 ## Current Progress
 
-### Completed Setup
+### Completed
 - Next.js project created with TypeScript and Tailwind
 - Supabase installed and connected
 - Tesseract.js installed for OCR
 - Twilio installed for WhatsApp/SMS alerts
 - All packages saved to package.json
 - Code pushed to GitHub
+- Workers and certificates tables created in Supabase
+- RLS disabled for MVP
+- Dashboard built with real Supabase data
+- Add Worker form connected to Supabase
 
 ### Next Steps
-- Create Supabase database tables (workers and certificates)
-- Build worker dashboard page
-- Build certificate upload and OCR feature
-- Build expiry alert system
+1. Build certificate upload page with Tesseract.js OCR
+2. Connect certificate data to worker profiles
+3. Build expiry alert system with Twilio WhatsApp
+4. Deploy to Vercel
 
 ## Rules
 

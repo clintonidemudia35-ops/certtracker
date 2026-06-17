@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase-browser'
 
 export default function NewWorkerPage() {
   const router = useRouter()
@@ -10,9 +10,14 @@ export default function NewWorkerPage() {
   const [fullName, setFullName]     = useState('')
   const [phone, setPhone]           = useState('')
   const [email, setEmail]           = useState('')
+  const [userId, setUserId]         = useState<string | null>(null)
   const [loading, setLoading]       = useState(false)
   const [success, setSuccess]       = useState(false)
   const [error, setError]           = useState<string | null>(null)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -22,7 +27,7 @@ export default function NewWorkerPage() {
 
     const { error: sbError } = await supabase
       .from('workers')
-      .insert([{ name: fullName, phone, email }])
+      .insert([{ name: fullName, phone, email, user_id: userId }])
 
     setLoading(false)
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase-browser'
 
 type Worker = { id: string; name: string }
 
@@ -61,6 +61,7 @@ export default function NewCertificatePage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [ocrLoading, setOcrLoading]     = useState(false)
   const [expiryDate, setExpiryDate]     = useState('')
+  const [userId, setUserId]             = useState<string | null>(null)
   const [saving, setSaving]             = useState(false)
   const [success, setSuccess]           = useState(false)
   const [error, setError]               = useState<string | null>(null)
@@ -69,6 +70,7 @@ export default function NewCertificatePage() {
     supabase.from('workers').select('id, name').order('name').then(({ data }) => {
       if (data) setWorkers(data)
     })
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
   }, [])
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -100,7 +102,7 @@ export default function NewCertificatePage() {
     setError(null)
     setSuccess(false)
     const { error: sbError } = await supabase.from('certificates').insert([{
-      worker_id: workerId, certificate_type: certType, expiry_date: expiryDate,
+      worker_id: workerId, certificate_type: certType, expiry_date: expiryDate, user_id: userId,
     }])
     setSaving(false)
     if (sbError) {

@@ -36,17 +36,20 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  if (!user && pathname !== '/login') {
+  // Public routes — no auth required
+  const isPublic = pathname === '/' || pathname === '/login' || pathname.startsWith('/landing')
+
+  if (!user && !isPublic) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/login'
     loginUrl.searchParams.set('redirectTo', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
-  // If an authenticated user hits /login, send them to the dashboard
-  if (user && pathname === '/login') {
+  // Authenticated users don't need the landing page or login — send to dashboard
+  if (user && (pathname === '/login' || pathname.startsWith('/landing'))) {
     const dashboardUrl = request.nextUrl.clone()
-    dashboardUrl.pathname = '/'
+    dashboardUrl.pathname = '/dashboard'
     return NextResponse.redirect(dashboardUrl)
   }
 

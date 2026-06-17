@@ -83,7 +83,7 @@ function CheckBadgeIcon() {
 // ─── Nav definition ───────────────────────────────────────────────────────────
 
 const NAV = [
-  { label: 'Dashboard',    href: '/',                  icon: <HomeIcon /> },
+  { label: 'Dashboard',    href: '/dashboard',          icon: <HomeIcon /> },
   { label: 'Workers',      href: '/workers/new',        icon: <UsersIcon /> },
   { label: 'Certificates', href: '/certificates/new',   icon: <DocumentIcon /> },
   { label: 'Settings',     href: '/settings',           icon: <CogIcon /> },

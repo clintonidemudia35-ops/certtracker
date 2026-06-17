@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 type Worker = {
   id: string
@@ -35,9 +35,12 @@ function statusBadge(status: string) {
 }
 
 export default async function DashboardPage() {
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   const [{ data: workers }, { data: certificates }] = await Promise.all([
-    supabase.from('workers').select('*').order('name'),
-    supabase.from('certificates').select('*').order('expiry_date'),
+    supabase.from('workers').select('*').eq('user_id', user?.id ?? '').order('name'),
+    supabase.from('certificates').select('*').eq('user_id', user?.id ?? '').order('expiry_date'),
   ])
 
   const workerList: Worker[]      = workers      ?? []

@@ -102,7 +102,13 @@ export async function GET() {
     const errors: string[] = []
 
     for (const cert of certificates) {
-      const worker = cert.workers as { name: string; phone: string } | null
+      // Supabase types embedded relations as arrays; at runtime a many-to-one join
+      // returns a single object, so we normalise both shapes here.
+      const workerData = cert.workers as
+        | { name: string; phone: string }
+        | { name: string; phone: string }[]
+        | null
+      const worker = Array.isArray(workerData) ? (workerData[0] ?? null) : workerData
 
       if (!worker?.phone) {
         console.warn(`[send-alerts] skipping cert "${cert.certificate_type}" — worker has no phone number`)

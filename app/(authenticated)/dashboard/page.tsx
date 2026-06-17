@@ -172,20 +172,32 @@ export default async function DashboardPage() {
                   {rows.map(({ worker, cert }, i) => {
                     const status = cert ? getCertStatus(cert.expiry_date) : 'No Certificate'
                     return (
-                      <tr key={`${worker.id}-${cert?.id ?? i}`} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 font-medium text-gray-900">{worker.name}</td>
-                        <td className="px-6 py-4 text-gray-600">{cert?.certificate_type ?? '—'}</td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {cert
-                            ? new Date(cert.expiry_date).toLocaleDateString('en-GB', {
-                                day: '2-digit', month: 'short', year: 'numeric',
-                              })
-                            : '—'}
+                      <tr key={`${worker.id}-${cert?.id ?? i}`} className="hover:bg-yellow-50 transition-colors cursor-pointer">
+                        <td className="font-medium text-gray-900">
+                          <Link href={`/dashboard/workers/${worker.id}`} className="block px-6 py-4 hover:text-yellow-700 transition-colors">
+                            {worker.name}
+                          </Link>
                         </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusBadge(status)}`}>
-                            {status}
-                          </span>
+                        <td className="text-gray-600">
+                          <Link href={`/dashboard/workers/${worker.id}`} className="block px-6 py-4">
+                            {cert?.certificate_type ?? '—'}
+                          </Link>
+                        </td>
+                        <td className="text-gray-600">
+                          <Link href={`/dashboard/workers/${worker.id}`} className="block px-6 py-4">
+                            {cert
+                              ? new Date(cert.expiry_date).toLocaleDateString('en-GB', {
+                                  day: '2-digit', month: 'short', year: 'numeric',
+                                })
+                              : '—'}
+                          </Link>
+                        </td>
+                        <td>
+                          <Link href={`/dashboard/workers/${worker.id}`} className="block px-6 py-4">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusBadge(status)}`}>
+                              {status}
+                            </span>
+                          </Link>
                         </td>
                       </tr>
                     )

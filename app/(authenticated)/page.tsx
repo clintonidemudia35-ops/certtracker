@@ -13,7 +13,6 @@ type Certificate = {
   expiry_date: string
 }
 
-// Derives status from an expiry date string
 function getCertStatus(expiryDate: string): 'Compliant' | 'Expiring Soon' | 'Expired' {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -26,7 +25,6 @@ function getCertStatus(expiryDate: string): 'Compliant' | 'Expiring Soon' | 'Exp
   return 'Compliant'
 }
 
-// Returns Tailwind classes for each status badge
 function statusBadge(status: string) {
   switch (status) {
     case 'Compliant':     return 'bg-green-100 text-green-700'
@@ -37,7 +35,6 @@ function statusBadge(status: string) {
 }
 
 export default async function DashboardPage() {
-  // Fetch workers and certificates in parallel
   const [{ data: workers }, { data: certificates }] = await Promise.all([
     supabase.from('workers').select('*').order('name'),
     supabase.from('certificates').select('*').order('expiry_date'),
@@ -46,23 +43,18 @@ export default async function DashboardPage() {
   const workerList: Worker[]      = workers      ?? []
   const certList:   Certificate[] = certificates ?? []
 
-  // Group certificates by worker_id for quick lookup
   const certsByWorker = certList.reduce<Record<string, Certificate[]>>((acc, cert) => {
     if (!acc[cert.worker_id]) acc[cert.worker_id] = []
     acc[cert.worker_id].push(cert)
     return acc
   }, {})
 
-  // Build flat table rows — one row per certificate; workers with no certs get one empty row
   const rows = workerList.flatMap((worker) => {
     const certs = certsByWorker[worker.id] ?? []
-    if (certs.length === 0) {
-      return [{ worker, cert: null as Certificate | null }]
-    }
+    if (certs.length === 0) return [{ worker, cert: null as Certificate | null }]
     return certs.map((cert) => ({ worker, cert }))
   })
 
-  // Calculate stats
   const totalWorkers = workerList.length
 
   const expiringSoon = workerList.filter((w) =>
@@ -75,24 +67,8 @@ export default async function DashboardPage() {
   }).length
 
   return (
-    <div className="min-h-screen bg-gray-50">
-
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center gap-3">
-          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-yellow-400">
-            <svg className="w-5 h-5 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900 leading-tight">CertTracker</h1>
-            <p className="text-xs text-gray-500 leading-tight">Construction Certification Manager</p>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+    <div className="bg-gray-50 min-h-full">
+      <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
 
         {/* Page title */}
         <div className="flex items-center justify-between">
@@ -174,7 +150,10 @@ export default async function DashboardPage() {
           <div className="overflow-x-auto">
             {rows.length === 0 ? (
               <div className="px-6 py-12 text-center text-sm text-gray-400">
-                No workers found. <Link href="/workers/new" className="text-yellow-600 hover:underline font-medium">Add your first worker.</Link>
+                No workers found.{' '}
+                <Link href="/workers/new" className="text-yellow-600 hover:underline font-medium">
+                  Add your first worker.
+                </Link>
               </div>
             ) : (
               <table className="w-full text-sm">
@@ -214,7 +193,7 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-      </main>
+      </div>
     </div>
   )
 }

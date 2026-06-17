@@ -6,15 +6,12 @@ import { supabase } from '@/lib/supabase'
 
 type Worker = { id: string; name: string }
 
-// Search OCR text for an expiry date, prioritising lines near expiry keywords
 function extractExpiryDate(text: string): string {
   const lines = text.split('\n')
-
   const datePatterns = [
     /\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})\b/,
     /\b(\d{1,2})\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+(\d{4})\b/i,
   ]
-
   const expiryKeywords = ['expir', 'valid until', 'renewal', 'use by']
 
   for (const line of lines) {
@@ -26,7 +23,6 @@ function extractExpiryDate(text: string): string {
     }
   }
 
-  // Fallback: return the last date found anywhere in the text
   let lastDate = ''
   for (const line of lines) {
     for (const pattern of datePatterns) {
@@ -37,7 +33,6 @@ function extractExpiryDate(text: string): string {
   return lastDate
 }
 
-// Convert a raw OCR date string to YYYY-MM-DD for the date input
 function toInputDate(raw: string): string {
   const dmy = raw.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/)
   if (dmy) {
@@ -79,21 +74,16 @@ export default function NewCertificatePage() {
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-
     setExpiryDate('')
     setError(null)
-
     const reader = new FileReader()
     reader.onload = (ev) => setImagePreview(ev.target?.result as string)
     reader.readAsDataURL(file)
-
     setOcrLoading(true)
     try {
-      // Dynamic import keeps Tesseract out of the server bundle
       const Tesseract = (await import('tesseract.js')).default
       const { data: { text } } = await Tesseract.recognize(file, 'eng')
-      const raw = extractExpiryDate(text)
-      setExpiryDate(toInputDate(raw))
+      setExpiryDate(toInputDate(extractExpiryDate(text)))
     } catch {
       setError('OCR scan failed — please enter the expiry date manually.')
     } finally {
@@ -106,19 +96,13 @@ export default function NewCertificatePage() {
     if (!workerId)   { setError('Please select a worker.');           return }
     if (!certType)   { setError('Please enter a certificate type.');  return }
     if (!expiryDate) { setError('Please enter an expiry date.');      return }
-
     setSaving(true)
     setError(null)
     setSuccess(false)
-
     const { error: sbError } = await supabase.from('certificates').insert([{
-      worker_id:        workerId,
-      certificate_type: certType,
-      expiry_date:      expiryDate,
+      worker_id: workerId, certificate_type: certType, expiry_date: expiryDate,
     }])
-
     setSaving(false)
-
     if (sbError) {
       setError(sbError.message)
     } else {
@@ -131,24 +115,8 @@ export default function NewCertificatePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-yellow-400">
-            <svg className="w-5 h-5 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900 leading-tight">CertTracker</h1>
-            <p className="text-xs text-gray-500 leading-tight">Construction Certification Manager</p>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-2xl mx-auto px-6 py-8">
+    <div className="bg-gray-50 min-h-full">
+      <div className="max-w-2xl mx-auto px-6 py-8">
 
         {/* Back button */}
         <button
@@ -166,7 +134,6 @@ export default function NewCertificatePage() {
           <p className="text-sm text-gray-500 mt-1">Upload a certificate photo and we&apos;ll scan it automatically</p>
         </div>
 
-        {/* Success banner */}
         {success && (
           <div className="flex items-center gap-3 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-6 text-sm">
             <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -176,7 +143,6 @@ export default function NewCertificatePage() {
           </div>
         )}
 
-        {/* Error banner */}
         {error && (
           <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-6 text-sm">
             <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -189,7 +155,6 @@ export default function NewCertificatePage() {
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
 
-            {/* Worker select */}
             <div>
               <label htmlFor="worker" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Worker <span className="text-red-500">*</span>
@@ -208,7 +173,6 @@ export default function NewCertificatePage() {
               </select>
             </div>
 
-            {/* Certificate type */}
             <div>
               <label htmlFor="certType" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Certificate Type <span className="text-red-500">*</span>
@@ -240,11 +204,8 @@ export default function NewCertificatePage() {
               </datalist>
             </div>
 
-            {/* Image upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Certificate Photo
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Certificate Photo</label>
               <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-yellow-400 hover:bg-yellow-50 transition-colors">
                 {imagePreview ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -258,16 +219,10 @@ export default function NewCertificatePage() {
                     <span className="text-xs">JPG, PNG, WEBP</span>
                   </div>
                 )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
+                <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
               </label>
             </div>
 
-            {/* Expiry date — populated by OCR, editable */}
             <div>
               <label htmlFor="expiry" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Expiry Date <span className="text-red-500">*</span>
@@ -297,7 +252,6 @@ export default function NewCertificatePage() {
               )}
             </div>
 
-            {/* Actions */}
             <div className="flex items-center gap-3 pt-2">
               <button
                 type="submit"
@@ -312,9 +266,7 @@ export default function NewCertificatePage() {
                     </svg>
                     Saving…
                   </>
-                ) : (
-                  'Save Certificate'
-                )}
+                ) : 'Save Certificate'}
               </button>
               <button
                 type="button"
@@ -328,7 +280,7 @@ export default function NewCertificatePage() {
           </form>
         </div>
 
-      </main>
+      </div>
     </div>
   )
 }

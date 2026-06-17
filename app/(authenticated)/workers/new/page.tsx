@@ -37,24 +37,8 @@ export default function NewWorkerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-yellow-400">
-            <svg className="w-5 h-5 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900 leading-tight">CertTracker</h1>
-            <p className="text-xs text-gray-500 leading-tight">Construction Certification Manager</p>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-2xl mx-auto px-6 py-8">
+    <div className="bg-gray-50 min-h-full">
+      <div className="max-w-2xl mx-auto px-6 py-8">
 
         {/* Back button */}
         <button
@@ -67,7 +51,6 @@ export default function NewWorkerPage() {
           Back to Dashboard
         </button>
 
-        {/* Page title */}
         <div className="mb-6">
           <h2 className="text-2xl font-semibold text-gray-900">Add New Worker</h2>
           <p className="text-sm text-gray-500 mt-1">Fill in the worker&apos;s details below</p>
@@ -93,11 +76,9 @@ export default function NewWorkerPage() {
           </div>
         )}
 
-        {/* Form */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
 
-            {/* Full Name */}
             <div>
               <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Full Name <span className="text-red-500">*</span>
@@ -113,7 +94,6 @@ export default function NewWorkerPage() {
               />
             </div>
 
-            {/* Phone Number */}
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Phone Number
@@ -128,7 +108,6 @@ export default function NewWorkerPage() {
               />
             </div>
 
-            {/* Email Address */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Email Address
@@ -143,7 +122,6 @@ export default function NewWorkerPage() {
               />
             </div>
 
-            {/* Actions */}
             <div className="flex items-center gap-3 pt-2">
               <button
                 type="submit"
@@ -174,7 +152,7 @@ export default function NewWorkerPage() {
           </form>
         </div>
 
-      </main>
+      </div>
     </div>
   )
 }

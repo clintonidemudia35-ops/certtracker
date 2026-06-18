@@ -94,7 +94,6 @@ const NAV = [
   { label: 'Dashboard',    href: '/dashboard',           icon: <HomeIcon /> },
   { label: 'Workers',      href: '/workers/new',         icon: <UsersIcon /> },
   { label: 'Certificates', href: '/certificates/new',    icon: <DocumentIcon /> },
-  { label: 'Settings',     href: '/settings',            icon: <CogIcon /> },
   { label: 'Account',      href: '/dashboard/account',   icon: <UserCircleIcon /> },
 ]
 

@@ -194,19 +194,15 @@ export default function LandingPage() {
 
         {/* Right column: hero animation video */}
         <div
-          className="anim-hero w-full overflow-hidden rounded-2xl"
-          style={{
-            animationDelay: '120ms',
-            background: 'white',
-            aspectRatio: '4 / 3',
-          }}
+          className="anim-hero w-full h-64 sm:h-80 lg:h-[440px] overflow-hidden rounded-2xl"
+          style={{ animationDelay: '120ms', background: 'white' }}
         >
           <video
             autoPlay
             loop
             muted
             playsInline
-            className="w-full h-full"
+            className="w-full h-full block"
             style={{ objectFit: 'cover', objectPosition: 'left center' }}
           >
             <source src="/hero-animation.mp4" type="video/mp4" />

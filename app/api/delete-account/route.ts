@@ -33,7 +33,11 @@ export async function DELETE() {
   // Delete the auth user FIRST — if this fails we return early and touch nothing else
   const adminClient = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: { headers: { Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}` } },
+    }
   )
   const { error: deleteUserError } = await adminClient.auth.admin.deleteUser(userId)
   if (deleteUserError) {

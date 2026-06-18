@@ -152,8 +152,8 @@ export default function LandingPage() {
 
           {/* Headline */}
           <h1
-            className="anim-hero text-4xl sm:text-5xl font-extrabold leading-[1.25] tracking-tight mt-2 mb-8"
-            style={{ color: NAVY, animationDelay: '80ms', ...heading }}
+            className="anim-hero text-4xl sm:text-5xl font-extrabold tracking-tight mt-2 mb-8"
+            style={{ color: NAVY, animationDelay: '80ms', lineHeight: '1.35', ...heading }}
           >
             Never let a<br />
             certification<br />

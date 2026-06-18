@@ -4,6 +4,11 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export async function DELETE() {
+  console.log('SERVICE KEY present:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
+  console.log('SERVICE KEY length:', process.env.SUPABASE_SERVICE_ROLE_KEY?.length)
+  console.log('SERVICE KEY prefix:', process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0, 6))
+  console.log('SUPABASE URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
+
   const cookieStore = await cookies()
 
   // Authenticate the calling user via their session cookie

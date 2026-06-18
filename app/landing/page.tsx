@@ -50,8 +50,8 @@ function ArrowRight() {
 
 const BENEFITS = [
   {
-    title: 'Snap and store',
-    body:  'Take a photo or upload a file of any card or certificate, and we capture the worker\'s name and expiry date automatically. No typing, no spreadsheets.',
+    title: 'Add certificates in seconds',
+    body:  'Photo or upload a card to auto-fill the worker\'s name and expiry date, or enter them yourself. You are always in control.',
     icon:  <CameraIcon />,
   },
   {
@@ -68,7 +68,7 @@ const BENEFITS = [
 
 const STEPS = [
   { title: 'Add your workers',           body: 'Add your team in seconds.' },
-  { title: 'Upload their certificates',  body: 'Snap a photo or upload a file from your device, and we capture the details automatically.' },
+  { title: 'Upload their certificates',  body: 'Photo or upload a certificate to capture the details automatically, then confirm. Or add them manually.' },
   { title: 'Relax',                      body: 'We alert you before anything expires.' },
 ]
 
@@ -152,7 +152,7 @@ export default function LandingPage() {
 
           {/* Headline */}
           <h1
-            className="anim-hero text-4xl sm:text-5xl font-extrabold leading-[1.12] tracking-tight mb-6"
+            className="anim-hero text-4xl sm:text-5xl font-extrabold leading-[1.25] tracking-tight mt-2 mb-8"
             style={{ color: NAVY, animationDelay: '80ms', ...heading }}
           >
             Never let a<br />

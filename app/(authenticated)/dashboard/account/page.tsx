@@ -74,20 +74,20 @@ export default function AccountPage() {
 
   // ── Load user ──────────────────────────────────────────────────────────────
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    async function load() {
+      const { data } = await supabase.auth.getUser()
       if (!data.user) { router.push('/login'); return }
       const uid = data.user.id
       setUserId(uid)
       setEmail(data.user.email ?? '')
 
-      // Try to load existing avatar
-      const { data: urlData } = supabase.storage
+      // Try to get a signed URL — errors if the file doesn't exist (user has no photo yet)
+      const { data: signedData } = await supabase.storage
         .from('avatars')
-        .getPublicUrl(`${uid}/avatar`)
-      // Supabase always returns a URL — add a cache-buster so stale images don't show
-      // We'll verify it loads by letting the img onError handle missing photos
-      setAvatarUrl(urlData.publicUrl + `?t=${Date.now()}`)
-    })
+        .createSignedUrl(`${uid}/avatar`, 3600)
+      if (signedData?.signedUrl) setAvatarUrl(signedData.signedUrl)
+    }
+    load()
   }, [router])
 
   // ── Avatar handlers ────────────────────────────────────────────────────────
@@ -119,11 +119,11 @@ export default function AccountPage() {
       return
     }
 
-    const { data: urlData } = supabase.storage
+    const { data: signedData } = await supabase.storage
       .from('avatars')
-      .getPublicUrl(`${userId}/avatar`)
+      .createSignedUrl(`${userId}/avatar`, 3600)
 
-    setAvatarUrl(urlData.publicUrl + `?t=${Date.now()}`)
+    setAvatarUrl(signedData?.signedUrl ?? null)
     setAvatarPreview(null)
     setAvatarFile(null)
     setUploadingAvatar(false)
@@ -263,7 +263,7 @@ export default function AccountPage() {
                   onClick={() => fileInputRef.current?.click()}
                   className="text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 hover:border-gray-400 px-4 py-2 rounded-lg transition-colors w-fit"
                 >
-                  Change Photo
+                  {avatarUrl ? 'Change Photo' : 'Upload Photo'}
                 </button>
               )}
               <p className="text-xs text-gray-400">JPG, PNG or WEBP. Max 5 MB.</p>
@@ -394,26 +394,20 @@ export default function AccountPage() {
           </button>
         </section>
 
-        {/* ── Danger Zone ─────────────────────────────────────────────────── */}
-        <section className="bg-white rounded-xl border-2 border-red-200 p-6 space-y-4">
+        {/* ── Delete account ───────────────────────────────────────────────── */}
+        <section className="bg-red-50 rounded-xl border border-red-100 p-5 flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-base font-semibold text-red-700">Danger Zone</h3>
-            <p className="text-sm text-gray-500 mt-0.5">Irreversible actions — proceed with caution</p>
+            <p className="text-sm font-semibold text-gray-900">Delete my account</p>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Permanently deletes your account and all workers, certificates, and data. This cannot be undone.
+            </p>
           </div>
-          <div className="flex items-start justify-between gap-4 bg-red-50 rounded-lg p-4">
-            <div>
-              <p className="text-sm font-semibold text-gray-900">Delete my account</p>
-              <p className="text-sm text-gray-500 mt-0.5">
-                Permanently deletes your account and all workers, certificates, and data. This cannot be undone.
-              </p>
-            </div>
-            <button
-              onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(''); setDeleteError(null) }}
-              className="shrink-0 text-sm font-semibold text-red-600 border border-red-300 hover:bg-red-50 hover:border-red-400 px-4 py-2 rounded-lg transition-colors"
-            >
-              Delete Account
-            </button>
-          </div>
+          <button
+            onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(''); setDeleteError(null) }}
+            className="shrink-0 text-sm font-semibold text-red-600 border border-red-200 hover:bg-red-100 hover:border-red-300 px-4 py-2 rounded-lg transition-colors"
+          >
+            Delete Account
+          </button>
         </section>
 
       </div>

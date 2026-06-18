@@ -25,7 +25,18 @@ export async function DELETE() {
 
   const userId = user.id
 
-  // Delete all user data (order matters — certs before workers due to FK)
+  // Delete the auth user FIRST — if this fails we return early and touch nothing else
+  const adminClient = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  const { error: deleteUserError } = await adminClient.auth.admin.deleteUser(userId)
+  if (deleteUserError) {
+    console.error('delete-account: auth.admin.deleteUser failed', JSON.stringify(deleteUserError))
+    return NextResponse.json({ error: deleteUserError.message }, { status: 500 })
+  }
+
+  // Auth user is gone — now clean up their data (non-fatal if any of these fail)
   const [certsResult, workersResult] = await Promise.all([
     supabase.from('certificates').delete().eq('user_id', userId),
     supabase.from('workers').delete().eq('user_id', userId),
@@ -34,19 +45,7 @@ export async function DELETE() {
   if (certsResult.error)   console.error('delete-account: certs error', certsResult.error)
   if (workersResult.error) console.error('delete-account: workers error', workersResult.error)
 
-  // Delete profile photo from storage (non-fatal if it doesn't exist)
   await supabase.storage.from('avatars').remove([`${userId}/avatar`])
-
-  // Delete the auth user — requires service role key (never exposed to the browser)
-  const adminClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-  const { error: deleteUserError } = await adminClient.auth.admin.deleteUser(userId)
-  if (deleteUserError) {
-    console.error('delete-account: auth.admin.deleteUser error', deleteUserError)
-    return NextResponse.json({ error: deleteUserError.message }, { status: 500 })
-  }
 
   return NextResponse.json({ success: true })
 }

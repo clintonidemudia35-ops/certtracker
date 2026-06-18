@@ -47,7 +47,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Authenticated users don't need the landing page or login — send to dashboard
-  if (user && (pathname === '/login' || pathname.startsWith('/landing'))) {
+  if (user && (pathname === '/' || pathname === '/login' || pathname.startsWith('/landing'))) {
     const dashboardUrl = request.nextUrl.clone()
     dashboardUrl.pathname = '/dashboard'
     return NextResponse.redirect(dashboardUrl)

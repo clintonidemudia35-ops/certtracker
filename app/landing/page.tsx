@@ -51,12 +51,12 @@ function ArrowRight() {
 const BENEFITS = [
   {
     title: 'Snap and store',
-    body:  'Photo any card or certificate and CertTracker reads the worker\'s name and expiry date automatically. No typing, no spreadsheets.',
+    body:  'Take a photo or upload a file of any card or certificate, and we capture the worker\'s name and expiry date automatically. No typing, no spreadsheets.',
     icon:  <CameraIcon />,
   },
   {
     title: 'Alerts before expiry',
-    body:  'Get notified well before any certification lapses, so no worker is ever turned away at the gate.',
+    body:  'Get a WhatsApp alert before any certification lapses, so no worker is ever turned away at the gate.',
     icon:  <BellIcon />,
   },
   {
@@ -68,7 +68,7 @@ const BENEFITS = [
 
 const STEPS = [
   { title: 'Add your workers',           body: 'Add your team in seconds.' },
-  { title: 'Upload their certificates',  body: 'Snap a photo and we capture the details automatically.' },
+  { title: 'Upload their certificates',  body: 'Snap a photo or upload a file from your device, and we capture the details automatically.' },
   { title: 'Relax',                      body: 'We alert you before anything expires.' },
 ]
 
@@ -166,7 +166,7 @@ export default function LandingPage() {
             style={{ animationDelay: '160ms' }}
           >
             CertTracker tracks your workers&apos; certifications, CSCS, OSHA, White Card and more,
-            and sends automatic alerts before they expire. Stay compliant, pass every audit,
+            and sends automatic WhatsApp alerts before they expire. Stay compliant, pass every audit,
             keep your crew on site.
           </p>
 

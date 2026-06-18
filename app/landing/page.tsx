@@ -192,18 +192,25 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Right column: illustration placeholder */}
+        {/* Right column: hero animation video */}
         <div
-          className="anim-hero w-full rounded-2xl border"
+          className="anim-hero w-full overflow-hidden rounded-2xl"
           style={{
             animationDelay: '120ms',
-            background: '#f0f4f8',
-            borderColor: '#e2e8f0',
-            minHeight: '400px',
+            background: 'white',
+            aspectRatio: '4 / 3',
           }}
-          id="hero-illustration"
         >
-          {/* ANIMATION GOES HERE - replace this placeholder */}
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full"
+            style={{ objectFit: 'cover', objectPosition: 'left center' }}
+          >
+            <source src="/hero-animation.mp4" type="video/mp4" />
+          </video>
         </div>
 
       </section>

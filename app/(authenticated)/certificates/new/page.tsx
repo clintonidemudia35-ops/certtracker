@@ -4,7 +4,39 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase-browser'
 
-type Worker = { id: string; name: string }
+// ─── Certificate type groups ───────────────────────────────────────────────────
+// "Custom certificate" is handled separately — it reveals a free-text input.
+
+const CERT_TYPE_GROUPS: Record<string, string[]> = {
+  'UK': [
+    'CSCS Card',
+    'IPAF',
+    'PASMA',
+    'First Aid at Work',
+    'Asbestos Awareness',
+    'SSSTS',
+    'SMSTS',
+  ],
+  'United States': [
+    'OSHA 10',
+    'OSHA 30',
+    'First Aid/CPR',
+    'Scaffold Certification',
+    'Forklift Certification',
+  ],
+  'Australia': [
+    'White Card',
+    'Working at Heights',
+    'EWP Licence',
+  ],
+  'Canada': [
+    'WHMIS',
+    'Fall Protection',
+    'First Aid',
+  ],
+}
+
+// ─── OCR helpers ──────────────────────────────────────────────────────────────
 
 function extractExpiryDate(text: string): string {
   const lines = text.split('\n')
@@ -52,19 +84,31 @@ function toInputDate(raw: string): string {
   return ''
 }
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type Worker = { id: string; name: string }
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function NewCertificatePage() {
   const router = useRouter()
 
-  const [workers, setWorkers]           = useState<Worker[]>([])
-  const [workerId, setWorkerId]         = useState('')
-  const [certType, setCertType]         = useState('')
+  const [workers,      setWorkers]      = useState<Worker[]>([])
+  const [workerId,     setWorkerId]     = useState('')
+  const [selectValue,  setSelectValue]  = useState('')       // what the <select> shows
+  const [customCert,   setCustomCert]   = useState('')       // typed when "Custom" chosen
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [ocrLoading, setOcrLoading]     = useState(false)
-  const [expiryDate, setExpiryDate]     = useState('')
-  const [userId, setUserId]             = useState<string | null>(null)
-  const [saving, setSaving]             = useState(false)
-  const [success, setSuccess]           = useState(false)
-  const [error, setError]               = useState<string | null>(null)
+  const [ocrLoading,   setOcrLoading]   = useState(false)
+  const [expiryDate,   setExpiryDate]   = useState('')
+  const [userId,       setUserId]       = useState<string | null>(null)
+  const [saving,       setSaving]       = useState(false)
+  const [success,      setSuccess]      = useState(false)
+  const [error,        setError]        = useState<string | null>(null)
+
+  const isCustom = selectValue === '__custom__'
+
+  // Resolved cert type to store
+  const certType = isCustom ? customCert.trim() : selectValue
 
   useEffect(() => {
     supabase.from('workers').select('id, name').order('name').then(({ data }) => {
@@ -72,6 +116,8 @@ export default function NewCertificatePage() {
     })
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
   }, [])
+
+  // ── OCR ─────────────────────────────────────────────────────────────────────
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -87,40 +133,52 @@ export default function NewCertificatePage() {
       const { data: { text } } = await Tesseract.recognize(file, 'eng')
       setExpiryDate(toInputDate(extractExpiryDate(text)))
     } catch {
-      setError('OCR scan failed — please enter the expiry date manually.')
+      setError('OCR scan failed. Please enter the expiry date manually.')
     } finally {
       setOcrLoading(false)
     }
   }
 
+  // ── Submit ───────────────────────────────────────────────────────────────────
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!workerId)   { setError('Please select a worker.');           return }
-    if (!certType)   { setError('Please enter a certificate type.');  return }
-    if (!expiryDate) { setError('Please enter an expiry date.');      return }
+    if (!workerId)   { setError('Please select a worker.');                    return }
+    if (!certType)   { setError('Please select or enter a certificate type.'); return }
+    if (!expiryDate) { setError('Please enter an expiry date.');               return }
+
     setSaving(true)
     setError(null)
     setSuccess(false)
+
     const { error: sbError } = await supabase.from('certificates').insert([{
-      worker_id: workerId, certificate_type: certType, expiry_date: expiryDate, user_id: userId,
+      worker_id: workerId,
+      certificate_type: certType,
+      expiry_date: expiryDate,
+      user_id: userId,
     }])
+
     setSaving(false)
+
     if (sbError) {
       setError(sbError.message)
     } else {
       setSuccess(true)
       setWorkerId('')
-      setCertType('')
+      setSelectValue('')
+      setCustomCert('')
       setImagePreview(null)
       setExpiryDate('')
     }
   }
 
+  // ── Render ───────────────────────────────────────────────────────────────────
+
   return (
     <div className="bg-gray-50 min-h-full">
       <div className="max-w-2xl mx-auto px-6 py-8">
 
-        {/* Back button */}
+        {/* Back */}
         <button
           onClick={() => router.push('/dashboard')}
           className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors mb-6"
@@ -136,6 +194,7 @@ export default function NewCertificatePage() {
           <p className="text-sm text-gray-500 mt-1">Upload a certificate photo and we&apos;ll scan it automatically</p>
         </div>
 
+        {/* Success banner */}
         {success && (
           <div className="flex items-center gap-3 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-6 text-sm">
             <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -145,6 +204,7 @@ export default function NewCertificatePage() {
           </div>
         )}
 
+        {/* Error banner */}
         {error && (
           <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-6 text-sm">
             <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -157,6 +217,7 @@ export default function NewCertificatePage() {
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
 
+            {/* Worker */}
             <div>
               <label htmlFor="worker" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Worker <span className="text-red-500">*</span>
@@ -168,44 +229,54 @@ export default function NewCertificatePage() {
                 required
                 className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition"
               >
-                <option value="">Select a worker…</option>
+                <option value="">Select a worker...</option>
                 {workers.map((w) => (
                   <option key={w.id} value={w.id}>{w.name}</option>
                 ))}
               </select>
             </div>
 
+            {/* Certificate type */}
             <div>
               <label htmlFor="certType" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Certificate Type <span className="text-red-500">*</span>
               </label>
-              <input
+              <select
                 id="certType"
-                list="cert-types"
-                type="text"
-                placeholder="e.g. CSCS Gold Card"
-                value={certType}
-                onChange={(e) => setCertType(e.target.value)}
-                required
-                className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition"
-              />
-              <datalist id="cert-types">
-                <option value="CSCS Gold Card" />
-                <option value="CSCS Blue Card" />
-                <option value="CSCS Green Card" />
-                <option value="CSCS Red Card" />
-                <option value="First Aid at Work" />
-                <option value="Emergency First Aid at Work" />
-                <option value="Asbestos Awareness" />
-                <option value="Working at Height" />
-                <option value="Manual Handling" />
-                <option value="Fire Marshal" />
-                <option value="IPAF (Powered Access)" />
-                <option value="PASMA (Scaffolding)" />
-                <option value="NEBOSH Certificate" />
-              </datalist>
+                value={selectValue}
+                onChange={(e) => {
+                  setSelectValue(e.target.value)
+                  if (e.target.value !== '__custom__') setCustomCert('')
+                }}
+                required={!isCustom}
+                className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition"
+              >
+                <option value="">Select certificate type...</option>
+                {Object.entries(CERT_TYPE_GROUPS).map(([region, certs]) => (
+                  <optgroup key={region} label={region}>
+                    {certs.map((cert) => (
+                      <option key={cert} value={cert}>{cert}</option>
+                    ))}
+                  </optgroup>
+                ))}
+                <option value="__custom__">Custom certificate...</option>
+              </select>
+
+              {/* Custom name input — shown only when "Custom certificate" is selected */}
+              {isCustom && (
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={customCert}
+                  onChange={(e) => setCustomCert(e.target.value)}
+                  placeholder="Enter certificate name"
+                  className="mt-2.5 w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition"
+                />
+              )}
             </div>
 
+            {/* Certificate photo */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Certificate Photo</label>
               <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-yellow-400 hover:bg-yellow-50 transition-colors">
@@ -225,6 +296,7 @@ export default function NewCertificatePage() {
               </label>
             </div>
 
+            {/* Expiry date */}
             <div>
               <label htmlFor="expiry" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Expiry Date <span className="text-red-500">*</span>
@@ -245,15 +317,16 @@ export default function NewCertificatePage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                     </svg>
-                    Scanning…
+                    Scanning...
                   </div>
                 )}
               </div>
               {expiryDate && !ocrLoading && (
-                <p className="text-xs text-gray-400 mt-1">Extracted by OCR — correct if needed</p>
+                <p className="text-xs text-gray-400 mt-1">Extracted by OCR. Correct if needed.</p>
               )}
             </div>
 
+            {/* Actions */}
             <div className="flex items-center gap-3 pt-2">
               <button
                 type="submit"
@@ -266,7 +339,7 @@ export default function NewCertificatePage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                     </svg>
-                    Saving…
+                    Saving...
                   </>
                 ) : 'Save Certificate'}
               </button>

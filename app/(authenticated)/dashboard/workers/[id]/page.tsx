@@ -33,10 +33,14 @@ function fmtDate(d: string) {
 }
 
 const CERT_TYPES = [
-  'CSCS Gold Card','CSCS Blue Card','CSCS Green Card','CSCS Red Card',
-  'First Aid at Work','Emergency First Aid at Work','Asbestos Awareness',
-  'Working at Height','Manual Handling','Fire Marshal',
-  'IPAF (Powered Access)','PASMA (Scaffolding)','NEBOSH Certificate',
+  // UK
+  'CSCS Card','IPAF','PASMA','First Aid at Work','Asbestos Awareness','SSSTS','SMSTS',
+  // US
+  'OSHA 10','OSHA 30','First Aid/CPR','Scaffold Certification','Forklift Certification',
+  // Australia
+  'White Card','Working at Heights','EWP Licence',
+  // Canada
+  'WHMIS','Fall Protection','First Aid',
 ]
 
 // ─── Shared UI atoms ──────────────────────────────────────────────────────────

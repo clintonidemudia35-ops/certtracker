@@ -58,6 +58,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Run on all routes except Next.js internals, static files, and API routes.
-    '/((?!_next/static|_next/image|favicon\\.ico|api/).*)'],
+    // Skip Next.js internals, static assets, and any path with a file extension.
+    '/((?!_next/static|_next/image|favicon\\.ico|api/|.*\\.(?:mp4|mp3|webm|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|otf|pdf|txt|xml|json)$).*)',
+  ],
 }

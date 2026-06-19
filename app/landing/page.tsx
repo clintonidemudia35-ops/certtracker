@@ -130,11 +130,10 @@ export default function LandingPage() {
         <div>
           {/* Badge */}
           <div
-            className="anim-hero inline-flex items-center gap-2 text-xs font-semibold px-3.5 py-1.5 rounded-full mb-8 border"
+            className="anim-hero inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-full mb-8"
             style={{
-              background: '#FFFBEB',
-              color: '#92600A',
-              borderColor: '#FDE68A',
+              background: '#1f2a44',
+              color: '#FFD23F',
               animationDelay: '0ms',
             }}
           >
@@ -151,7 +150,7 @@ export default function LandingPage() {
           >
             Never let a<br />
             certification<br />
-            expire again
+            <span style={{ color: '#e8a900' }}>expire</span> again
           </h1>
 
           {/* Subtext */}

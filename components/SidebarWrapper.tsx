@@ -144,9 +144,8 @@ export default function SidebarWrapper({ children }: { children: React.ReactNode
 
         {/* Brand */}
         <div className={`flex items-center h-16 border-b border-gray-100 shrink-0 ${collapsed ? 'justify-center' : 'gap-3 px-4'}`}>
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-yellow-400 shrink-0">
-            <CheckBadgeIcon />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/certtracker-logo.svg" alt="CertTracker" style={{ height: '32px', width: 'auto' }} className="shrink-0" />
           {!collapsed && (
             <div className="min-w-0">
               <p className="text-sm font-bold text-gray-900 leading-tight truncate">CertTracker</p>
@@ -233,9 +232,8 @@ export default function SidebarWrapper({ children }: { children: React.ReactNode
             <MenuIcon />
           </button>
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-7 h-7 rounded-md bg-yellow-400">
-              <CheckBadgeIcon />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/certtracker-logo.svg" alt="CertTracker" style={{ height: '28px', width: 'auto' }} />
             <span className="text-sm font-bold text-gray-900">CertTracker</span>
           </div>
         </div>

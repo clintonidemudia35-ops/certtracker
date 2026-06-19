@@ -19,6 +19,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "CertTracker",
   description: "Track worker certifications and stay compliant.",
+  icons: {
+    icon: '/certtracker-logo.svg',
+  },
 }
 
 export default function RootLayout({

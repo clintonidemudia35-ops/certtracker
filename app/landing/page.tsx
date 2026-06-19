@@ -107,16 +107,10 @@ export default function LandingPage() {
 
           {/* Wordmark */}
           <div className="flex items-center gap-2.5">
-            <div
-              className="flex items-center justify-center w-8 h-8 rounded-lg shrink-0"
-              style={{ background: YELLOW }}
-            >
-              <svg className="w-4 h-4" style={{ color: NAVY }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <span className="text-sm font-bold tracking-tight" style={{ color: NAVY, ...heading }}>
-              CertTracker
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/certtracker-logo.svg" alt="CertTracker shield" style={{ height: '32px', width: 'auto' }} />
+            <span className="text-sm font-bold tracking-tight" style={{ ...heading }}>
+              <span style={{ color: NAVY }}>Cert</span><span style={{ color: '#e8a900' }}>Tracker</span>
             </span>
           </div>
 
@@ -334,17 +328,8 @@ export default function LandingPage() {
       {/* ── FOOTER ────────────────────────────────────────────────────────── */}
       <footer className="border-t border-gray-100 px-6 py-8">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <div
-              className="flex items-center justify-center w-6 h-6 rounded"
-              style={{ background: YELLOW }}
-            >
-              <svg className="w-3 h-3" style={{ color: NAVY }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <span className="text-sm font-semibold" style={{ color: NAVY, ...heading }}>CertTracker</span>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/certtracker-lockup.svg" alt="CertTracker" style={{ width: '160px', height: 'auto' }} />
           <span className="text-xs text-gray-400">
             &copy; {new Date().getFullYear()} CertTracker. All rights reserved.
           </span>

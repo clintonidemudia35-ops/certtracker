@@ -51,7 +51,7 @@ function ArrowRight() {
 const BENEFITS = [
   {
     title: 'Add certificates in seconds',
-    body:  'Photo or upload a card to auto-fill the worker\'s name and expiry date, or enter them yourself. You are always in control.',
+    body:  'Add a worker\'s certificate in seconds, upload the document and set the expiry date. Everything stored in one place.',
     icon:  <CameraIcon />,
   },
   {
@@ -68,7 +68,7 @@ const BENEFITS = [
 
 const STEPS = [
   { title: 'Add your workers',           body: 'Add your team in seconds.' },
-  { title: 'Upload their certificates',  body: 'Photo or upload a certificate to capture the details automatically, then confirm. Or add them manually.' },
+  { title: 'Upload their certificates',  body: 'Add their certificates and upload the documents, then set the expiry dates.' },
   { title: 'Relax',                      body: 'We alert you before anything expires.' },
 ]
 
@@ -217,7 +217,7 @@ export default function LandingPage() {
               Everything you need to stay compliant
             </h2>
             <p className="text-gray-500 text-base max-w-xl mx-auto leading-relaxed">
-              From card scanning to automatic alerts. All in one place.
+              From storing certificates to automatic alerts. All in one place.
             </p>
           </div>
 

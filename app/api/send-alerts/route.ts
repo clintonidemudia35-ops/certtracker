@@ -193,13 +193,13 @@ export async function GET(request: NextRequest) {
 
       console.log(`[send-alerts] sending ${threshold}-day alert for cert ${cert.id} to manager (user ${cert.user_id})`)
 
+      // Ensure from has whatsapp: prefix — Twilio requires it for the WhatsApp channel
+      const rawFrom = process.env.TWILIO_WHATSAPP_FROM ?? ''
+      const from = rawFrom.startsWith('whatsapp:') ? rawFrom : `whatsapp:${rawFrom}`
+
       try {
-        const msg = await twilioClient.messages.create({
-          from: process.env.TWILIO_WHATSAPP_FROM,
-          to,
-          body,
-        })
-        console.log(`[send-alerts] sent — Twilio SID: ${msg.sid}`)
+        const msg = await twilioClient.messages.create({ from, to, body })
+        console.log(`[send-alerts] sent — SID: ${msg.sid}, status: ${msg.status}, from: ${from}, to: ${to}`)
 
         // Record the alert so it is not sent again. ignoreDuplicates handles any race condition.
         await supabase
@@ -211,9 +211,15 @@ export async function GET(request: NextRequest) {
 
         sent++
       } catch (err) {
-        const e = err as Error & { code?: number; status?: number }
-        console.error(`[send-alerts] Twilio error for cert ${cert.id}:`, { message: e.message, code: e.code })
-        errors.push(`cert ${cert.id}: ${e.message} (Twilio code ${e.code ?? 'unknown'})`)
+        const e = err as Error & { code?: number; status?: number; moreInfo?: string }
+        console.error(`[send-alerts] Twilio error for cert ${cert.id}:`, {
+          message:  e.message,
+          code:     e.code,
+          moreInfo: e.moreInfo,
+          from,
+          to,
+        })
+        errors.push(`cert ${cert.id}: ${e.message} (code ${e.code ?? 'unknown'})`)
         skipped++
       }
     }

@@ -64,7 +64,7 @@ export default function LoginPage() {
               : mode === 'signup' ? 'Create an account'
               : 'Reset your password'
 
-  const subtitle = mode === 'signup' ? 'Get started with CertTracker today'
+  const subtitle = mode === 'signup' ? 'Get started with CertWith today'
                  : mode === 'forgot'  ? 'Enter your email and we\'ll send you a reset link'
                  : null
 
@@ -75,7 +75,7 @@ export default function LoginPage() {
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-6xl mx-auto flex justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/certtracker-lockup.svg" alt="CertTracker" style={{ width: '200px', height: 'auto' }} />
+          <img src="/certtracker-lockup.svg" alt="CertWith" style={{ width: '200px', height: 'auto' }} />
         </div>
       </header>
 

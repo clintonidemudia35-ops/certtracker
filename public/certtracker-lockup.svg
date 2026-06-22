@@ -1,8 +1,8 @@
-<svg width="320" height="80" viewBox="0 0 320 80" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CertTracker - Certification Compliance">
+<svg width="320" height="80" viewBox="0 0 320 80" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CertWith - Certification Compliance">
   <g transform="translate(0,2)">
     <path d="M26 0 L52 11 L52 35 C52 56 40 70 26 78 C12 70 0 56 0 35 L0 11 Z" fill="#1f2a44"/>
     <path d="M14 38 L23 48 L40 26" stroke="#FFD23F" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
-  <text x="66" y="42" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-weight="800" font-size="28" fill="#1f2a44">Cert<tspan fill="#e8a900">Tracker</tspan></text>
+  <text x="66" y="42" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-weight="800" font-size="28" fill="#1f2a44">Cert<tspan fill="#e8a900">With</tspan></text>
   <text x="68" y="62" font-family="system-ui, sans-serif" font-size="10" letter-spacing="2.5" fill="#8a93a3">CERTIFICATION COMPLIANCE</text>
 </svg>

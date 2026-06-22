@@ -17,7 +17,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "CertTracker",
+  title: "CertWith",
   description: "Track worker certifications and stay compliant.",
   icons: {
     icon: '/certtracker-logo.svg',

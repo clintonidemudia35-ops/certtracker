@@ -108,9 +108,9 @@ export default function LandingPage() {
           {/* Wordmark */}
           <div className="flex items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/certtracker-logo.svg" alt="CertTracker shield" style={{ height: '32px', width: 'auto' }} />
+            <img src="/certtracker-logo.svg" alt="CertWith shield" style={{ height: '32px', width: 'auto' }} />
             <span className="text-sm font-bold tracking-tight" style={{ ...heading }}>
-              <span style={{ color: NAVY }}>Cert</span><span style={{ color: '#e8a900' }}>Tracker</span>
+              <span style={{ color: NAVY }}>Cert</span><span style={{ color: '#e8a900' }}>With</span>
             </span>
           </div>
 
@@ -158,7 +158,7 @@ export default function LandingPage() {
             className="anim-hero text-lg text-gray-500 leading-relaxed mb-10 max-w-lg"
             style={{ animationDelay: '160ms' }}
           >
-            CertTracker tracks your workers&apos; certifications, CSCS, OSHA, White Card and more,
+            CertWith tracks your workers&apos; certifications, CSCS, OSHA, White Card and more,
             and sends automatic WhatsApp alerts before they expire. Stay compliant, pass every audit,
             keep your crew on site.
           </p>
@@ -328,9 +328,9 @@ export default function LandingPage() {
       <footer className="border-t border-gray-100 px-6 py-8">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/certtracker-lockup.svg" alt="CertTracker" style={{ width: '160px', height: 'auto' }} />
+          <img src="/certtracker-lockup.svg" alt="CertWith" style={{ width: '160px', height: 'auto' }} />
           <span className="text-xs text-gray-400">
-            &copy; {new Date().getFullYear()} CertTracker. All rights reserved.
+            &copy; {new Date().getFullYear()} CertWith. All rights reserved.
           </span>
         </div>
       </footer>

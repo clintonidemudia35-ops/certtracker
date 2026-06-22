@@ -145,10 +145,10 @@ export default function SidebarWrapper({ children }: { children: React.ReactNode
         {/* Brand */}
         <div className={`flex items-center h-16 border-b border-gray-100 shrink-0 ${collapsed ? 'justify-center' : 'gap-3 px-4'}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/certtracker-logo.svg" alt="CertTracker" style={{ height: '32px', width: 'auto' }} className="shrink-0" />
+          <img src="/certtracker-logo.svg" alt="CertWith" style={{ height: '32px', width: 'auto' }} className="shrink-0" />
           {!collapsed && (
             <div className="min-w-0">
-              <p className="text-sm font-bold text-gray-900 leading-tight truncate">CertTracker</p>
+              <p className="text-sm font-bold text-gray-900 leading-tight truncate">CertWith</p>
               <p className="text-xs text-gray-400 leading-tight truncate">Certification Manager</p>
             </div>
           )}
@@ -233,8 +233,8 @@ export default function SidebarWrapper({ children }: { children: React.ReactNode
           </button>
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/certtracker-logo.svg" alt="CertTracker" style={{ height: '28px', width: 'auto' }} />
-            <span className="text-sm font-bold text-gray-900">CertTracker</span>
+            <img src="/certtracker-logo.svg" alt="CertWith" style={{ height: '28px', width: 'auto' }} />
+            <span className="text-sm font-bold text-gray-900">CertWith</span>
           </div>
         </div>
 

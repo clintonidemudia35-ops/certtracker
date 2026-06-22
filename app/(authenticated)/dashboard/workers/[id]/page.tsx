@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase-browser'
@@ -32,16 +32,13 @@ function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-const CERT_TYPES = [
-  // UK
-  'CSCS Card','IPAF','PASMA','First Aid at Work','Asbestos Awareness','SSSTS','SMSTS',
-  // US
-  'OSHA 10','OSHA 30','First Aid/CPR','Scaffold Certification','Forklift Certification',
-  // Australia
-  'White Card','Working at Heights','EWP Licence',
-  // Canada
-  'WHMIS','Fall Protection','First Aid',
-]
+const CERT_TYPE_GROUPS: Record<string, string[]> = {
+  'UK':            ['CSCS Card','IPAF','PASMA','First Aid at Work','Asbestos Awareness','SSSTS','SMSTS'],
+  'United States': ['OSHA 10','OSHA 30','First Aid/CPR','Scaffold Certification','Forklift Certification'],
+  'Australia':     ['White Card','Working at Heights','EWP Licence'],
+  'Canada':        ['WHMIS','Fall Protection','First Aid'],
+}
+const CERT_TYPES = Object.values(CERT_TYPE_GROUPS).flat()
 
 // ─── Shared UI atoms ──────────────────────────────────────────────────────────
 
@@ -91,15 +88,21 @@ export default function WorkerDetailPage() {
   const [deletingWorker,      setDeletingWorker]      = useState(false)
 
   // ── Certificate state ────────────────────────────────────────────────────────
-  const [editingCert,       setEditingCert]       = useState<Cert | null>(null)
-  const [editCertType,      setEditCertType]      = useState('')
-  const [editCertExpiry,    setEditCertExpiry]    = useState('')
-  const [savingCert,        setSavingCert]        = useState(false)
-  const [confirmDeleteCert, setConfirmDeleteCert] = useState<Cert | null>(null)
-  const [deletingCert,      setDeletingCert]      = useState(false)
-  const [showAddCert,       setShowAddCert]       = useState(false)
-  const [newCertType,       setNewCertType]       = useState('')
-  const [newCertExpiry,     setNewCertExpiry]     = useState('')
+  const [editingCert,         setEditingCert]         = useState<Cert | null>(null)
+  const [editCertSelectValue, setEditCertSelectValue] = useState('')
+  const [editCertCustom,      setEditCertCustom]      = useState('')
+  const [editCertExpiry,      setEditCertExpiry]      = useState('')
+  const [editRemoveFile,      setEditRemoveFile]      = useState(false)
+  const [editNewFile,         setEditNewFile]         = useState<File | null>(null)
+  const [editNewFilePreview,  setEditNewFilePreview]  = useState<string | null>(null)
+  const [savingCert,          setSavingCert]          = useState(false)
+  const [confirmDeleteCert,   setConfirmDeleteCert]   = useState<Cert | null>(null)
+  const [deletingCert,        setDeletingCert]        = useState(false)
+  const [showAddCert,         setShowAddCert]         = useState(false)
+  const [newCertType,         setNewCertType]         = useState('')
+  const [newCertExpiry,       setNewCertExpiry]       = useState('')
+
+  const editFileInputRef = useRef<HTMLInputElement>(null)
 
   // ── Load ─────────────────────────────────────────────────────────────────────
   const load = useCallback(async () => {
@@ -164,25 +167,71 @@ export default function WorkerDetailPage() {
   // ── Certificate handlers ─────────────────────────────────────────────────────
   function startEditCert(cert: Cert) {
     setEditingCert(cert)
-    setEditCertType(cert.certificate_type)
     setEditCertExpiry(cert.expiry_date)
+    if (CERT_TYPES.includes(cert.certificate_type)) {
+      setEditCertSelectValue(cert.certificate_type)
+      setEditCertCustom('')
+    } else {
+      setEditCertSelectValue('__custom__')
+      setEditCertCustom(cert.certificate_type)
+    }
+    setEditRemoveFile(false)
+    setEditNewFile(null)
+    setEditNewFilePreview(null)
     setConfirmDeleteCert(null)
     setShowAddCert(false)
+  }
+
+  function handleEditFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (editNewFilePreview) URL.revokeObjectURL(editNewFilePreview)
+    setEditNewFile(file)
+    setEditRemoveFile(false)
+    setEditNewFilePreview(file.type.startsWith('image/') ? URL.createObjectURL(file) : null)
+  }
+
+  function clearEditFile() {
+    if (editNewFilePreview) URL.revokeObjectURL(editNewFilePreview)
+    setEditNewFile(null)
+    setEditNewFilePreview(null)
+    if (editFileInputRef.current) editFileInputRef.current.value = ''
   }
 
   async function saveCert(e: React.FormEvent) {
     e.preventDefault()
     if (!editingCert || !userId) return
+    const certType = editCertSelectValue === '__custom__' ? editCertCustom.trim() : editCertSelectValue
+    if (!certType) return
     setSavingCert(true)
     setError(null)
+
+    let filePath = editingCert.file_path
+
+    if (editNewFile) {
+      if (editingCert.file_path) {
+        await supabase.storage.from('certificates').remove([editingCert.file_path])
+      }
+      const newPath = `${userId}/${editingCert.id}/${editNewFile.name}`
+      const { error: uploadError } = await supabase.storage
+        .from('certificates')
+        .upload(newPath, editNewFile, { contentType: editNewFile.type })
+      if (!uploadError) filePath = newPath
+    } else if (editRemoveFile && editingCert.file_path) {
+      await supabase.storage.from('certificates').remove([editingCert.file_path])
+      filePath = null
+    }
+
     const { data, error: err } = await supabase
       .from('certificates')
-      .update({ certificate_type: editCertType, expiry_date: editCertExpiry })
+      .update({ certificate_type: certType, expiry_date: editCertExpiry, file_path: filePath })
       .eq('id', editingCert.id).eq('user_id', userId)
       .select().single()
     setSavingCert(false)
     if (err) { setError(err.message); return }
     setCerts(prev => prev.map(c => c.id === editingCert.id ? data : c))
+    if (editNewFilePreview) URL.revokeObjectURL(editNewFilePreview)
+    setEditNewFilePreview(null)
     setEditingCert(null)
   }
 
@@ -424,48 +473,107 @@ export default function WorkerDetailPage() {
                     return (
                       <tr key={cert.id} className="bg-yellow-50">
                         <td colSpan={4} className="px-6 py-4">
-                          <form onSubmit={saveCert} className="flex flex-wrap items-end gap-3">
-                            <div className="flex-1 min-w-48">
-                              <label className="block text-xs font-medium text-gray-600 mb-1">Certificate Type</label>
-                              <input
-                                required
-                                list="cert-types-edit"
-                                value={editCertType}
-                                onChange={e => setEditCertType(e.target.value)}
-                                className={inputCls()}
-                                placeholder="e.g. CSCS Gold Card"
-                              />
-                              <datalist id="cert-types-edit">
-                                {CERT_TYPES.map(t => <option key={t} value={t} />)}
-                              </datalist>
+                          <form onSubmit={saveCert} className="space-y-3">
+                            <div className="flex flex-wrap items-end gap-3">
+                              <div className="flex-1 min-w-48">
+                                <label className="block text-xs font-medium text-gray-600 mb-1">Certificate Type</label>
+                                <select
+                                  required={editCertSelectValue !== '__custom__'}
+                                  value={editCertSelectValue}
+                                  onChange={e => {
+                                    setEditCertSelectValue(e.target.value)
+                                    if (e.target.value !== '__custom__') setEditCertCustom('')
+                                  }}
+                                  className={`${inputCls()} bg-white`}
+                                >
+                                  <option value="">Select type...</option>
+                                  {Object.entries(CERT_TYPE_GROUPS).map(([region, types]) => (
+                                    <optgroup key={region} label={region}>
+                                      {types.map(t => <option key={t} value={t}>{t}</option>)}
+                                    </optgroup>
+                                  ))}
+                                  <option value="__custom__">Custom certificate...</option>
+                                </select>
+                                {editCertSelectValue === '__custom__' && (
+                                  <input
+                                    type="text"
+                                    required
+                                    autoFocus
+                                    value={editCertCustom}
+                                    onChange={e => setEditCertCustom(e.target.value)}
+                                    placeholder="Certificate name"
+                                    className={`mt-1.5 ${inputCls()}`}
+                                  />
+                                )}
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">Expiry Date</label>
+                                <input
+                                  required
+                                  type="date"
+                                  value={editCertExpiry}
+                                  onChange={e => setEditCertExpiry(e.target.value)}
+                                  className={inputCls()}
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="submit"
+                                  disabled={savingCert}
+                                  className="flex items-center gap-1.5 bg-yellow-400 hover:bg-yellow-500 disabled:opacity-60 text-gray-900 font-semibold text-sm px-3.5 py-2.5 rounded-lg transition-colors"
+                                >
+                                  {savingCert && <Spinner />}
+                                  Save
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => { clearEditFile(); setEditingCert(null) }}
+                                  className="text-sm text-gray-500 hover:text-gray-800 font-medium px-3 py-2.5 rounded-lg hover:bg-gray-100 transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
                             </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-600 mb-1">Expiry Date</label>
-                              <input
-                                required
-                                type="date"
-                                value={editCertExpiry}
-                                onChange={e => setEditCertExpiry(e.target.value)}
-                                className={inputCls()}
-                              />
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="submit"
-                                disabled={savingCert}
-                                className="flex items-center gap-1.5 bg-yellow-400 hover:bg-yellow-500 disabled:opacity-60 text-gray-900 font-semibold text-sm px-3.5 py-2.5 rounded-lg transition-colors"
-                              >
-                                {savingCert && <Spinner />}
-                                Save
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setEditingCert(null)}
-                                className="text-sm text-gray-500 hover:text-gray-800 font-medium px-3 py-2.5 rounded-lg hover:bg-gray-100 transition-colors"
-                              >
-                                Cancel
-                              </button>
-                            </div>
+
+                            {/* File management */}
+                            {editNewFile ? (
+                              <div className="flex items-center gap-2 text-xs text-gray-600">
+                                <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                </svg>
+                                <span className="truncate max-w-[200px]">{editNewFile.name}</span>
+                                <span className="text-gray-400">({(editNewFile.size / 1024).toFixed(0)} KB)</span>
+                                <button type="button" onClick={clearEditFile} className="text-gray-400 hover:text-red-500 transition-colors ml-1">Remove</button>
+                              </div>
+                            ) : editRemoveFile ? (
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="text-red-500">File will be removed on save.</span>
+                                <button type="button" onClick={() => setEditRemoveFile(false)} className="text-gray-500 hover:text-gray-800 underline">Undo</button>
+                              </div>
+                            ) : editingCert?.file_path ? (
+                              <div className="flex items-center gap-3 text-xs text-gray-500 flex-wrap">
+                                <span className="flex items-center gap-1">
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                  </svg>
+                                  Document attached
+                                </span>
+                                <button type="button" onClick={() => editingCert && viewDocument(editingCert)} className="text-blue-600 hover:underline">View</button>
+                                <button type="button" onClick={() => setEditRemoveFile(true)} className="text-red-500 hover:underline">Remove</button>
+                                <label className="text-yellow-700 font-medium hover:underline cursor-pointer">
+                                  Replace
+                                  <input ref={editFileInputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleEditFileChange} />
+                                </label>
+                              </div>
+                            ) : (
+                              <label className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 cursor-pointer transition-colors">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                                </svg>
+                                Attach document <span className="text-gray-400">(optional)</span>
+                                <input ref={editFileInputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleEditFileChange} />
+                              </label>
+                            )}
                           </form>
                         </td>
                       </tr>

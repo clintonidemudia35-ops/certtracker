@@ -41,6 +41,18 @@ export async function DELETE() {
   }
 
   // Auth user is gone — now clean up their data (non-fatal if any of these fail)
+
+  // Delete cert files from storage before removing the records
+  const { data: certFiles } = await supabase
+    .from('certificates')
+    .select('file_path')
+    .eq('user_id', userId)
+    .not('file_path', 'is', null)
+  if (certFiles && certFiles.length > 0) {
+    const paths = certFiles.map((c: { file_path: string }) => c.file_path)
+    await supabase.storage.from('certificates').remove(paths)
+  }
+
   const [certsResult, workersResult] = await Promise.all([
     supabase.from('certificates').delete().eq('user_id', userId),
     supabase.from('workers').delete().eq('user_id', userId),

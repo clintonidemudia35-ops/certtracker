@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase-browser'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Worker = { id: string; name: string; phone: string; email: string }
-type Cert   = { id: string; worker_id: string; certificate_type: string; expiry_date: string; user_id: string }
+type Cert   = { id: string; worker_id: string; certificate_type: string; expiry_date: string; user_id: string; file_path: string | null }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -149,6 +149,11 @@ export default function WorkerDetailPage() {
     if (!worker || !userId) return
     setDeletingWorker(true)
     setError(null)
+    // Delete any cert files from storage before removing records
+    const filePaths = certs.map(c => c.file_path).filter(Boolean) as string[]
+    if (filePaths.length > 0) {
+      await supabase.storage.from('certificates').remove(filePaths)
+    }
     await supabase.from('certificates').delete().eq('worker_id', worker.id).eq('user_id', userId)
     const { error: err } = await supabase.from('workers').delete().eq('id', worker.id).eq('user_id', userId)
     setDeletingWorker(false)
@@ -185,6 +190,9 @@ export default function WorkerDetailPage() {
     if (!confirmDeleteCert || !userId) return
     setDeletingCert(true)
     setError(null)
+    if (confirmDeleteCert.file_path) {
+      await supabase.storage.from('certificates').remove([confirmDeleteCert.file_path])
+    }
     const { error: err } = await supabase
       .from('certificates')
       .delete()
@@ -210,6 +218,18 @@ export default function WorkerDetailPage() {
     setNewCertType('')
     setNewCertExpiry('')
     setShowAddCert(false)
+  }
+
+  async function viewDocument(cert: Cert) {
+    if (!cert.file_path) return
+    const { data, error: err } = await supabase.storage
+      .from('certificates')
+      .createSignedUrl(cert.file_path, 3600)
+    if (err || !data) {
+      setError('Could not generate document link. Try again.')
+      return
+    }
+    window.open(data.signedUrl, '_blank', 'noopener,noreferrer')
   }
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -495,6 +515,14 @@ export default function WorkerDetailPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
+                          {cert.file_path && (
+                            <button
+                              onClick={() => viewDocument(cert)}
+                              className="text-xs font-medium text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-300 px-2.5 py-1 rounded-md transition-colors"
+                            >
+                              View
+                            </button>
+                          )}
                           <button
                             onClick={() => startEditCert(cert)}
                             className="text-xs font-medium text-gray-500 hover:text-gray-900 border border-gray-200 hover:border-gray-300 px-2.5 py-1 rounded-md transition-colors"

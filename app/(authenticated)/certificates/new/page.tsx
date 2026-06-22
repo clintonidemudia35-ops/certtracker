@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase-browser'
 
 // ─── Certificate type groups ───────────────────────────────────────────────────
-// "Custom certificate" is handled separately — it reveals a free-text input.
 
 const CERT_TYPE_GROUPS: Record<string, string[]> = {
   'UK': [
@@ -36,54 +35,6 @@ const CERT_TYPE_GROUPS: Record<string, string[]> = {
   ],
 }
 
-// ─── OCR helpers ──────────────────────────────────────────────────────────────
-
-function extractExpiryDate(text: string): string {
-  const lines = text.split('\n')
-  const datePatterns = [
-    /\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})\b/,
-    /\b(\d{1,2})\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+(\d{4})\b/i,
-  ]
-  const expiryKeywords = ['expir', 'valid until', 'renewal', 'use by']
-
-  for (const line of lines) {
-    if (expiryKeywords.some((kw) => line.toLowerCase().includes(kw))) {
-      for (const pattern of datePatterns) {
-        const match = line.match(pattern)
-        if (match) return match[0]
-      }
-    }
-  }
-
-  let lastDate = ''
-  for (const line of lines) {
-    for (const pattern of datePatterns) {
-      const match = line.match(pattern)
-      if (match) lastDate = match[0]
-    }
-  }
-  return lastDate
-}
-
-function toInputDate(raw: string): string {
-  const dmy = raw.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/)
-  if (dmy) {
-    const [, d, m, y] = dmy
-    const year = y.length === 2 ? `20${y}` : y
-    return `${year}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
-  }
-  const dMonthY = raw.match(/(\d{1,2})\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+(\d{4})/i)
-  if (dMonthY) {
-    const months: Record<string, string> = {
-      jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',
-      jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12',
-    }
-    const [, d, mon, y] = dMonthY
-    return `${y}-${months[mon.toLowerCase().slice(0, 3)]}-${d.padStart(2, '0')}`
-  }
-  return ''
-}
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Worker = { id: string; name: string }
@@ -93,21 +44,21 @@ type Worker = { id: string; name: string }
 export default function NewCertificatePage() {
   const router = useRouter()
 
-  const [workers,      setWorkers]      = useState<Worker[]>([])
-  const [workerId,     setWorkerId]     = useState('')
-  const [selectValue,  setSelectValue]  = useState('')       // what the <select> shows
-  const [customCert,   setCustomCert]   = useState('')       // typed when "Custom" chosen
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [ocrLoading,   setOcrLoading]   = useState(false)
-  const [expiryDate,   setExpiryDate]   = useState('')
-  const [userId,       setUserId]       = useState<string | null>(null)
-  const [saving,       setSaving]       = useState(false)
-  const [success,      setSuccess]      = useState(false)
-  const [error,        setError]        = useState<string | null>(null)
+  const [workers,       setWorkers]      = useState<Worker[]>([])
+  const [workerId,      setWorkerId]     = useState('')
+  const [selectValue,   setSelectValue]  = useState('')
+  const [customCert,    setCustomCert]   = useState('')
+  const [selectedFile,  setSelectedFile] = useState<File | null>(null)
+  const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null)
+  const [expiryDate,    setExpiryDate]   = useState('')
+  const [userId,        setUserId]       = useState<string | null>(null)
+  const [saving,        setSaving]       = useState(false)
+  const [success,       setSuccess]      = useState(false)
+  const [error,         setError]        = useState<string | null>(null)
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isCustom = selectValue === '__custom__'
-
-  // Resolved cert type to store
   const certType = isCustom ? customCert.trim() : selectValue
 
   useEffect(() => {
@@ -117,29 +68,32 @@ export default function NewCertificatePage() {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
   }, [])
 
-  // ── OCR ─────────────────────────────────────────────────────────────────────
+  // Revoke object URL when filePreviewUrl changes (or on unmount)
+  useEffect(() => {
+    return () => { if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl) }
+  }, [filePreviewUrl])
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  // ── File selection ─────────────────────────────────────────────────────────
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setExpiryDate('')
+    setSelectedFile(file)
     setError(null)
-    const reader = new FileReader()
-    reader.onload = (ev) => setImagePreview(ev.target?.result as string)
-    reader.readAsDataURL(file)
-    setOcrLoading(true)
-    try {
-      const Tesseract = (await import('tesseract.js')).default
-      const { data: { text } } = await Tesseract.recognize(file, 'eng')
-      setExpiryDate(toInputDate(extractExpiryDate(text)))
-    } catch {
-      setError('OCR scan failed. Please enter the expiry date manually.')
-    } finally {
-      setOcrLoading(false)
+    if (file.type.startsWith('image/')) {
+      setFilePreviewUrl(URL.createObjectURL(file))
+    } else {
+      setFilePreviewUrl(null)
     }
   }
 
-  // ── Submit ───────────────────────────────────────────────────────────────────
+  function clearFile() {
+    setSelectedFile(null)
+    setFilePreviewUrl(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  // ── Submit ─────────────────────────────────────────────────────────────────
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -151,28 +105,40 @@ export default function NewCertificatePage() {
     setError(null)
     setSuccess(false)
 
-    const { error: sbError } = await supabase.from('certificates').insert([{
-      worker_id: workerId,
-      certificate_type: certType,
-      expiry_date: expiryDate,
-      user_id: userId,
-    }])
+    // Insert cert and get its ID so we can name the storage path
+    const { data: certData, error: insertError } = await supabase
+      .from('certificates')
+      .insert([{ worker_id: workerId, certificate_type: certType, expiry_date: expiryDate, user_id: userId }])
+      .select('id')
+      .single()
+
+    if (insertError || !certData) {
+      setSaving(false)
+      setError(insertError?.message ?? 'Failed to save certificate.')
+      return
+    }
+
+    // Upload file to private storage (non-fatal — cert is saved regardless)
+    if (selectedFile && userId) {
+      const filePath = `${userId}/${certData.id}/${selectedFile.name}`
+      const { error: uploadError } = await supabase.storage
+        .from('certificates')
+        .upload(filePath, selectedFile, { contentType: selectedFile.type })
+      if (!uploadError) {
+        await supabase.from('certificates').update({ file_path: filePath }).eq('id', certData.id)
+      }
+    }
 
     setSaving(false)
-
-    if (sbError) {
-      setError(sbError.message)
-    } else {
-      setSuccess(true)
-      setWorkerId('')
-      setSelectValue('')
-      setCustomCert('')
-      setImagePreview(null)
-      setExpiryDate('')
-    }
+    setSuccess(true)
+    setWorkerId('')
+    setSelectValue('')
+    setCustomCert('')
+    clearFile()
+    setExpiryDate('')
   }
 
-  // ── Render ───────────────────────────────────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div className="bg-gray-50 min-h-full">
@@ -191,7 +157,7 @@ export default function NewCertificatePage() {
 
         <div className="mb-6">
           <h2 className="text-2xl font-semibold text-gray-900">Add Certificate</h2>
-          <p className="text-sm text-gray-500 mt-1">Upload a certificate photo and we&apos;ll scan it automatically</p>
+          <p className="text-sm text-gray-500 mt-1">Enter the certificate details. Optionally attach a photo or PDF for your records.</p>
         </div>
 
         {/* Success banner */}
@@ -262,7 +228,6 @@ export default function NewCertificatePage() {
                 <option value="__custom__">Custom certificate...</option>
               </select>
 
-              {/* Custom name input — shown only when "Custom certificate" is selected */}
               {isCustom && (
                 <input
                   type="text"
@@ -276,53 +241,73 @@ export default function NewCertificatePage() {
               )}
             </div>
 
-            {/* Certificate photo */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Certificate Photo</label>
-              <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-yellow-400 hover:bg-yellow-50 transition-colors">
-                {imagePreview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={imagePreview} alt="Certificate preview" className="h-full w-full object-contain rounded-lg p-1" />
-                ) : (
-                  <div className="flex flex-col items-center gap-2 text-gray-400">
-                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                    </svg>
-                    <span className="text-sm">Click to upload a photo</span>
-                    <span className="text-xs">JPG, PNG, WEBP</span>
-                  </div>
-                )}
-                <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-              </label>
-            </div>
-
             {/* Expiry date */}
             <div>
               <label htmlFor="expiry" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Expiry Date <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <input
-                  id="expiry"
-                  type="date"
-                  value={expiryDate}
-                  onChange={(e) => setExpiryDate(e.target.value)}
-                  required
-                  disabled={ocrLoading}
-                  className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition disabled:opacity-60"
-                />
-                {ocrLoading && (
-                  <div className="absolute inset-y-0 right-3 flex items-center gap-2 text-xs text-gray-400">
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                    </svg>
-                    Scanning...
+              <input
+                id="expiry"
+                type="date"
+                value={expiryDate}
+                onChange={(e) => setExpiryDate(e.target.value)}
+                required
+                className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition"
+              />
+            </div>
+
+            {/* Certificate document (optional) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Certificate Document{' '}
+                <span className="text-xs font-normal text-gray-400">(optional — photo or PDF)</span>
+              </label>
+
+              {selectedFile ? (
+                <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                  {filePreviewUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={filePreviewUrl}
+                      alt="Preview"
+                      className="h-12 w-12 object-cover rounded shrink-0"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-12 w-12 rounded bg-gray-200 shrink-0">
+                      <svg className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                      </svg>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{selectedFile.name}</p>
+                    <p className="text-xs text-gray-400">{(selectedFile.size / 1024).toFixed(0)} KB</p>
                   </div>
-                )}
-              </div>
-              {expiryDate && !ocrLoading && (
-                <p className="text-xs text-gray-400 mt-1">Extracted by OCR. Correct if needed.</p>
+                  <button
+                    type="button"
+                    onClick={clearFile}
+                    className="text-xs text-gray-400 hover:text-red-500 transition-colors shrink-0"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-yellow-400 hover:bg-yellow-50 transition-colors">
+                  <div className="flex flex-col items-center gap-2 text-gray-400">
+                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                    </svg>
+                    <span className="text-sm">Click to upload a photo or PDF</span>
+                    <span className="text-xs">JPG, PNG, WEBP, PDF</span>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                </label>
               )}
             </div>
 
@@ -330,7 +315,7 @@ export default function NewCertificatePage() {
             <div className="flex items-center gap-3 pt-2">
               <button
                 type="submit"
-                disabled={saving || ocrLoading}
+                disabled={saving}
                 className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 disabled:opacity-60 disabled:cursor-not-allowed text-gray-900 font-semibold text-sm px-5 py-2.5 rounded-lg transition-colors"
               >
                 {saving ? (

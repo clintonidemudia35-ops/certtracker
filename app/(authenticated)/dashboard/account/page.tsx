@@ -58,12 +58,6 @@ export default function AccountPage() {
   const [avatarSuccess, setAvatarSuccess] = useState(false)
   const [avatarError,   setAvatarError]  = useState<string | null>(null)
 
-  const [savedPhone,    setSavedPhone]    = useState('')       // last value confirmed in DB
-  const [alertPhone,    setAlertPhone]    = useState('')       // live input value
-  const [editingPhone,  setEditingPhone]  = useState(false)   // true = edit form visible
-  const [savingPhone,   setSavingPhone]   = useState(false)
-  const [phoneError,    setPhoneError]    = useState<string | null>(null)
-
   const [newPassword,     setNewPassword]    = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showNewPw,       setShowNewPw]      = useState(false)
@@ -87,17 +81,6 @@ export default function AccountPage() {
       setUserId(uid)
       setEmail(data.user.email ?? '')
 
-      // Load saved WhatsApp number from profiles table (row may not exist for older accounts)
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('phone')
-        .eq('id', uid)
-        .single()
-      const phone = profile?.phone ?? ''
-      setSavedPhone(phone)
-      setAlertPhone(phone)
-      setEditingPhone(!phone) // start in edit mode only if no number is saved yet
-
       // Try to get a signed URL — errors if the file doesn't exist (user has no photo yet)
       const { data: signedData } = await supabase.storage
         .from('avatars')
@@ -106,34 +89,6 @@ export default function AccountPage() {
     }
     load()
   }, [router])
-
-  // ── Alerts phone handler ───────────────────────────────────────────────────
-  async function handleSavePhone(e: React.FormEvent) {
-    e.preventDefault()
-    setPhoneError(null)
-
-    const trimmed = alertPhone.trim()
-    if (trimmed) {
-      const digits = trimmed.replace(/\D/g, '')
-      if (digits.length < 7 || !trimmed.startsWith('+')) {
-        setPhoneError('Enter the number in international format starting with +, e.g. +44 7700 900123.')
-        return
-      }
-    }
-
-    setSavingPhone(true)
-    const { error } = await supabase
-      .from('profiles')
-      .upsert({ id: userId, phone: trimmed }, { onConflict: 'id' })
-    setSavingPhone(false)
-
-    if (error) {
-      setPhoneError(error.message)
-    } else {
-      setSavedPhone(trimmed)
-      setEditingPhone(false)
-    }
-  }
 
   // ── Avatar handlers ────────────────────────────────────────────────────────
   function handleAvatarSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -328,79 +283,6 @@ export default function AccountPage() {
               To change your email, contact support.
             </p>
           </div>
-        </section>
-
-        {/* ── Alerts ──────────────────────────────────────────────────────── */}
-        <section className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-          <div>
-            <h3 className="text-base font-semibold text-gray-900">Alerts</h3>
-            <p className="text-sm text-gray-500 mt-0.5">Expiry alerts will be sent to this number via WhatsApp.</p>
-          </div>
-
-          {phoneError && <ErrorBanner msg={phoneError} />}
-
-          {savedPhone && !editingPhone ? (
-            /* ── Display state: number is saved ── */
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                WhatsApp number for expiry alerts
-              </label>
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-sm font-medium text-gray-900">{savedPhone}</span>
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Saved
-                </span>
-                <button
-                  type="button"
-                  onClick={() => { setEditingPhone(true); setAlertPhone(savedPhone); setPhoneError(null) }}
-                  className="text-sm font-medium text-gray-500 hover:text-gray-900 border border-gray-300 hover:border-gray-400 px-3 py-1 rounded-lg transition-colors"
-                >
-                  Edit number
-                </button>
-              </div>
-            </div>
-          ) : (
-            /* ── Edit state: no number yet, or user clicked Edit ── */
-            <form onSubmit={handleSavePhone} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  WhatsApp number for expiry alerts
-                </label>
-                <input
-                  type="tel"
-                  value={alertPhone}
-                  onChange={e => { setAlertPhone(e.target.value); setPhoneError(null) }}
-                  placeholder="+44 7700 900123"
-                  className={inputCls()}
-                />
-                <p className="text-xs text-gray-400 mt-1.5">
-                  Include your country code, e.g. +44 7700 900123 (UK) or +1 555 123 4567 (US).
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="submit"
-                  disabled={savingPhone}
-                  className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 disabled:opacity-60 text-gray-900 font-semibold text-sm px-5 py-2.5 rounded-lg transition-colors"
-                >
-                  {savingPhone && <Spinner />}
-                  {savingPhone ? 'Saving…' : 'Save Number'}
-                </button>
-                {savedPhone && (
-                  <button
-                    type="button"
-                    onClick={() => { setEditingPhone(false); setAlertPhone(savedPhone); setPhoneError(null) }}
-                    className="text-sm text-gray-500 hover:text-gray-800 font-medium px-4 py-2.5 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
-            </form>
-          )}
         </section>
 
         {/* ── Change Password ─────────────────────────────────────────────── */}

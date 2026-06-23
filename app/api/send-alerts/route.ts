@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import twilio from 'twilio'
+import { Resend } from 'resend'
 
 // ─── Clients ──────────────────────────────────────────────────────────────────
 
@@ -14,11 +14,7 @@ const supabase = createClient(
   }
 )
 
-const twilioClient = twilio(
-  process.env.TWILIO_API_KEY,
-  process.env.TWILIO_API_SECRET,
-  { accountSid: process.env.TWILIO_ACCOUNT_SID }
-)
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -28,23 +24,11 @@ function formatDate(dateStr: string): string {
   })
 }
 
-// Normalise a stored phone number to WhatsApp E.164 format.
-// Accepts: UK 07xxx, international 44xxx, or any number starting with +.
-function toWhatsAppNumber(phone: string): string | null {
-  const digits = phone.replace(/\D/g, '')
-  if (!digits) return null
-  if (digits.startsWith('07') && digits.length === 11) return `whatsapp:+44${digits.slice(1)}`
-  if (digits.startsWith('44') && digits.length >= 12)  return `whatsapp:+${digits}`
-  if (phone.trim().startsWith('+'))                    return `whatsapp:+${digits}`
-  return null
-}
-
 // Alert thresholds in days (most urgent first — determines which threshold fires on a given run).
 const THRESHOLDS = [7, 30, 60] as const
 type Threshold = typeof THRESHOLDS[number]
 
 // Return the single threshold this cert qualifies for today, or null if none.
-// Each cert matches at most one threshold per run, so alerts don't stack.
 function getThreshold(daysUntil: number): Threshold | null {
   if (daysUntil >= 0 && daysUntil <= 7)  return 7
   if (daysUntil > 7  && daysUntil <= 30) return 30
@@ -69,13 +53,10 @@ export async function GET(request: NextRequest) {
 
   // ── Env check (logged once per cold start to help diagnose missing vars) ──
   console.log('[send-alerts] env check:', {
-    SUPABASE_URL:           !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE:  !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-    TWILIO_ACCOUNT_SID:     !!process.env.TWILIO_ACCOUNT_SID,
-    TWILIO_API_KEY:         !!process.env.TWILIO_API_KEY,
-    TWILIO_API_SECRET:      !!process.env.TWILIO_API_SECRET,
-    TWILIO_FROM:            !!process.env.TWILIO_WHATSAPP_FROM,
-    CRON_SECRET:            !!process.env.CRON_SECRET,
+    SUPABASE_URL:          !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    RESEND_API_KEY:        !!process.env.RESEND_API_KEY,
+    CRON_SECRET:           !!process.env.CRON_SECRET,
   })
 
   try {
@@ -125,30 +106,13 @@ export async function GET(request: NextRequest) {
       (sentRows ?? []).map(r => `${r.certificate_id}|${r.threshold}`)
     )
 
-    // ── 3. Fetch manager phone numbers for all unique user_ids ───────────────
-    const userIds = [...new Set(certs.map(c => c.user_id).filter(Boolean))]
-
-    const { data: profiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, phone')
-      .in('id', userIds)
-
-    if (profilesError) {
-      console.error('[send-alerts] profiles query failed:', profilesError)
-      return NextResponse.json({ error: profilesError.message }, { status: 500 })
-    }
-
-    // Map user_id → manager phone (only users who have saved a number)
-    const phoneByUser = new Map(
-      (profiles ?? [])
-        .filter(p => p.phone)
-        .map(p => [p.id, p.phone as string])
-    )
-
-    // ── 4. Process each certificate ──────────────────────────────────────────
+    // ── 3. Process each certificate ──────────────────────────────────────────
     let sent    = 0
     let skipped = 0
     const errors: string[] = []
+
+    // Cache manager emails to avoid redundant admin API calls per user
+    const emailByUser = new Map<string, string>()
 
     for (const cert of certs) {
       // Calculate whole days until expiry using UTC to avoid DST drift
@@ -167,19 +131,17 @@ export async function GET(request: NextRequest) {
         continue
       }
 
-      // Manager's phone
-      const managerPhone = phoneByUser.get(cert.user_id)
-      if (!managerPhone) {
-        console.warn(`[send-alerts] skipping cert ${cert.id} — manager (user ${cert.user_id}) has no WhatsApp number saved`)
-        skipped++
-        continue
-      }
-
-      const to = toWhatsAppNumber(managerPhone)
-      if (!to) {
-        console.warn(`[send-alerts] skipping cert ${cert.id} — could not parse manager phone "${managerPhone}" into E.164`)
-        skipped++
-        continue
+      // Resolve manager email (cached per user_id to avoid redundant lookups)
+      let managerEmail = emailByUser.get(cert.user_id)
+      if (!managerEmail) {
+        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(cert.user_id)
+        if (userError || !userData.user?.email) {
+          console.warn(`[send-alerts] skipping cert ${cert.id} — could not get email for user ${cert.user_id}:`, userError?.message)
+          skipped++
+          continue
+        }
+        managerEmail = userData.user.email
+        emailByUser.set(cert.user_id, managerEmail)
       }
 
       // Worker name (Supabase may return the relation as object or single-item array)
@@ -187,19 +149,35 @@ export async function GET(request: NextRequest) {
       const workerName = (Array.isArray(workerRaw) ? workerRaw[0]?.name : workerRaw?.name) ?? 'Unknown worker'
 
       const dayLabel = daysUntil === 1 ? '1 day' : `${daysUntil} days`
-      const body =
-        `CertWith alert: ${workerName}'s ${cert.certificate_type} expires in ${dayLabel} ` +
-        `(on ${formatDate(cert.expiry_date)}). Please arrange renewal to stay compliant.`
+      const subject  = `Certificate expiring soon - ${workerName}`
+      const text = [
+        'Hi,',
+        '',
+        `This is a reminder that ${workerName}'s ${cert.certificate_type} is due to expire in ${dayLabel}, on ${formatDate(cert.expiry_date)}.`,
+        '',
+        `Please arrange renewal as soon as possible to ensure ${workerName} remains compliant and is not turned away at the gate.`,
+        '',
+        'CertWith',
+      ].join('\n')
 
-      console.log(`[send-alerts] sending ${threshold}-day alert for cert ${cert.id} to manager (user ${cert.user_id})`)
-
-      // Ensure from has whatsapp: prefix — Twilio requires it for the WhatsApp channel
-      const rawFrom = process.env.TWILIO_WHATSAPP_FROM ?? ''
-      const from = rawFrom.startsWith('whatsapp:') ? rawFrom : `whatsapp:${rawFrom}`
+      console.log(`[send-alerts] sending ${threshold}-day alert for cert ${cert.id} to ${managerEmail}`)
 
       try {
-        const msg = await twilioClient.messages.create({ from, to, body })
-        console.log(`[send-alerts] sent — SID: ${msg.sid}, status: ${msg.status}, from: ${from}, to: ${to}`)
+        const result = await resend.emails.send({
+          from:    'CertWith Alerts <onboarding@resend.dev>',
+          to:      managerEmail,
+          subject,
+          text,
+        })
+
+        if (result.error) {
+          console.error(`[send-alerts] Resend error for cert ${cert.id}:`, result.error)
+          errors.push(`cert ${cert.id}: ${result.error.message}`)
+          skipped++
+          continue
+        }
+
+        console.log(`[send-alerts] sent — Resend id: ${result.data?.id}`)
 
         // Record the alert so it is not sent again. ignoreDuplicates handles any race condition.
         await supabase
@@ -211,15 +189,9 @@ export async function GET(request: NextRequest) {
 
         sent++
       } catch (err) {
-        const e = err as Error & { code?: number; status?: number; moreInfo?: string }
-        console.error(`[send-alerts] Twilio error for cert ${cert.id}:`, {
-          message:  e.message,
-          code:     e.code,
-          moreInfo: e.moreInfo,
-          from,
-          to,
-        })
-        errors.push(`cert ${cert.id}: ${e.message} (code ${e.code ?? 'unknown'})`)
+        const e = err as Error
+        console.error(`[send-alerts] unexpected error for cert ${cert.id}:`, e.message)
+        errors.push(`cert ${cert.id}: ${e.message}`)
         skipped++
       }
     }

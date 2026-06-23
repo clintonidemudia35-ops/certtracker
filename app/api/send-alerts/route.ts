@@ -36,6 +36,11 @@ function getThreshold(daysUntil: number): Threshold | null {
   return null
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+function isValidUUID(v: unknown): v is string {
+  return typeof v === 'string' && UUID_RE.test(v)
+}
+
 // ─── Route ────────────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
@@ -127,6 +132,13 @@ export async function GET(request: NextRequest) {
 
       // Already sent for this cert + threshold?
       if (alreadySent.has(`${cert.id}|${threshold}`)) {
+        skipped++
+        continue
+      }
+
+      // Guard: user_id must be a valid UUID or getUserById will throw synchronously
+      if (!isValidUUID(cert.user_id)) {
+        console.warn(`[send-alerts] skipping cert ${cert.id} — user_id is not a valid UUID: ${JSON.stringify(cert.user_id)}`)
         skipped++
         continue
       }

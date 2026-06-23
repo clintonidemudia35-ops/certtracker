@@ -56,7 +56,7 @@ const BENEFITS = [
   },
   {
     title: 'Alerts before expiry',
-    body:  'Get a WhatsApp alert before any certification lapses, so no worker is ever turned away at the gate.',
+    body:  'Get an email alert before any certification lapses, so no worker is ever turned away at the gate.',
     icon:  <BellIcon />,
   },
   {
@@ -159,7 +159,7 @@ export default function LandingPage() {
             style={{ animationDelay: '160ms' }}
           >
             CertWith tracks your workers&apos; certifications, CSCS, OSHA, White Card and more,
-            and sends automatic WhatsApp alerts before they expire. Stay compliant, pass every audit,
+            and sends automatic email alerts before they expire. Stay compliant, pass every audit,
             keep your crew on site.
           </p>
 

@@ -52,6 +52,7 @@ export default function NewCertificatePage() {
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null)
   const [expiryDate,    setExpiryDate]   = useState('')
   const [userId,        setUserId]       = useState<string | null>(null)
+  const [accountType,   setAccountType]  = useState<string | null>(null)
   const [saving,        setSaving]       = useState(false)
   const [success,       setSuccess]      = useState(false)
   const [error,         setError]        = useState<string | null>(null)
@@ -62,10 +63,26 @@ export default function NewCertificatePage() {
   const certType = isCustom ? customCert.trim() : selectValue
 
   useEffect(() => {
-    supabase.from('workers').select('id, name').order('name').then(({ data }) => {
-      if (data) setWorkers(data)
-    })
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      const uid = user?.id ?? null
+      setUserId(uid)
+      if (!uid) return
+
+      const [{ data: workerData }, { data: profileData }] = await Promise.all([
+        supabase.from('workers').select('id, name').order('name'),
+        supabase.from('profiles').select('account_type').eq('id', uid).single(),
+      ])
+
+      if (workerData) setWorkers(workerData)
+      const aType = profileData?.account_type ?? null
+      setAccountType(aType)
+      // For individual users, silently pre-select their only worker
+      if (aType === 'individual' && workerData && workerData.length > 0) {
+        setWorkerId(workerData[0].id)
+      }
+    }
+    load()
   }, [])
 
   // Revoke object URL when filePreviewUrl changes (or on unmount)
@@ -183,24 +200,26 @@ export default function NewCertificatePage() {
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
 
-            {/* Worker */}
-            <div>
-              <label htmlFor="worker" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Worker <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="worker"
-                value={workerId}
-                onChange={(e) => setWorkerId(e.target.value)}
-                required
-                className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition"
-              >
-                <option value="">Select a worker...</option>
-                {workers.map((w) => (
-                  <option key={w.id} value={w.id}>{w.name}</option>
-                ))}
-              </select>
-            </div>
+            {/* Worker — hidden for individual users (auto-selected) */}
+            {accountType !== 'individual' && (
+              <div>
+                <label htmlFor="worker" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Worker <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="worker"
+                  value={workerId}
+                  onChange={(e) => setWorkerId(e.target.value)}
+                  required
+                  className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition"
+                >
+                  <option value="">Select a worker...</option>
+                  {workers.map((w) => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Certificate type */}
             <div>

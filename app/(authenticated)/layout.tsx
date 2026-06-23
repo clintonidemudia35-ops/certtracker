@@ -30,5 +30,5 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
 
   if (!profile?.account_type) redirect('/onboarding')
 
-  return <SidebarWrapper>{children}</SidebarWrapper>
+  return <SidebarWrapper accountType={profile.account_type}>{children}</SidebarWrapper>
 }

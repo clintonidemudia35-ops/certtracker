@@ -6,6 +6,17 @@ import { supabase } from '@/lib/supabase-browser'
 
 type Mode = 'signin' | 'signup' | 'forgot'
 
+function friendlyAuthError(err: { message: string; status?: number }): string {
+  if (
+    err.status === 429 ||
+    err.message.toLowerCase().includes('rate limit') ||
+    err.message.toLowerCase().includes('too many')
+  ) {
+    return 'Too many sign-up attempts right now. Please wait a few minutes and try again.'
+  }
+  return err.message
+}
+
 export default function LoginPage() {
   const router = useRouter()
 
@@ -27,7 +38,7 @@ export default function LoginPage() {
       const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
       setLoading(false)
       if (authError) {
-        setError(authError.message)
+        setError(friendlyAuthError(authError))
       } else {
         router.push('/dashboard')
       }
@@ -36,7 +47,7 @@ export default function LoginPage() {
       const { error: authError } = await supabase.auth.signUp({ email, password })
       setLoading(false)
       if (authError) {
-        setError(authError.message)
+        setError(friendlyAuthError(authError))
       } else {
         setSuccessMsg(`We sent a confirmation link to ${email}. Click it to activate your account.`)
       }
@@ -47,7 +58,7 @@ export default function LoginPage() {
       })
       setLoading(false)
       if (authError) {
-        setError(authError.message)
+        setError(friendlyAuthError(authError))
       } else {
         setSuccessMsg(`Password reset email sent to ${email}. Check your inbox.`)
       }

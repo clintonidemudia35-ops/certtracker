@@ -67,7 +67,7 @@ const BENEFITS = [
 ]
 
 const STEPS = [
-  { title: 'Add your workers',           body: 'Add your team in seconds.' },
+  { title: 'Add your workers (or just yourself)', body: 'Whether you are a solo tradesperson or managing a team, add who you need to track.' },
   { title: 'Upload their certificates',  body: 'Add their certificates and upload the documents, then set the expiry dates.' },
   { title: 'Relax',                      body: 'We alert you before anything expires.' },
 ]

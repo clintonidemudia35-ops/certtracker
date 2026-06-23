@@ -108,7 +108,13 @@ const NAV = [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function SidebarWrapper({ children }: { children: React.ReactNode }) {
+export default function SidebarWrapper({
+  children,
+  accountType,
+}: {
+  children: React.ReactNode
+  accountType?: string | null
+}) {
   const pathname  = usePathname()
   const router    = useRouter()
 
@@ -172,7 +178,9 @@ export default function SidebarWrapper({ children }: { children: React.ReactNode
 
         {/* Nav links */}
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
-          {NAV.map((item) => {
+          {NAV.filter(item =>
+            !(item.href === '/workers/new' && accountType === 'individual')
+          ).map((item) => {
             const active = isActive(item.href)
             return (
               <Link

@@ -62,6 +62,7 @@ export default function OnboardingPage() {
     setSaving(true)
     setError(null)
 
+    // Save account type
     const { error: upsertError } = await supabase
       .from('profiles')
       .upsert({ id: userId, account_type: accountType }, { onConflict: 'id' })
@@ -71,6 +72,21 @@ export default function OnboardingPage() {
       setSaving(false)
       setChoice(null)
       return
+    }
+
+    // For individual users, create a single self-worker (once only — skip if one exists)
+    if (accountType === 'individual') {
+      const { data: existing } = await supabase
+        .from('workers')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(1)
+
+      if (!existing || existing.length === 0) {
+        await supabase
+          .from('workers')
+          .insert({ name: 'My Certifications', user_id: userId })
+      }
     }
 
     router.replace('/dashboard')
@@ -96,7 +112,7 @@ export default function OnboardingPage() {
             How will you use CertWith?
           </h1>
           <p className="text-sm text-gray-500 mt-2">
-            Choose the option that best describes you. You can always change this later.
+            This helps us set up CertWith for you.
           </p>
         </div>
 

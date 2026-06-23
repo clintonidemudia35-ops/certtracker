@@ -279,7 +279,7 @@ export default function NewCertificatePage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Certificate Document{' '}
-                <span className="text-xs font-normal text-gray-400">(optional — photo or PDF)</span>
+                <span className="text-xs font-normal text-gray-400">(optional)</span>
               </label>
 
               {selectedFile ? (

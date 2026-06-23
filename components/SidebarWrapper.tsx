@@ -163,7 +163,9 @@ export default function SidebarWrapper({
           <img src="/certtracker-logo.svg" alt="CertWith" style={{ height: '32px', width: 'auto' }} className="shrink-0" />
           {!collapsed && (
             <div className="min-w-0">
-              <p className="text-sm font-bold text-gray-900 leading-tight truncate">CertWith</p>
+              <p className="text-sm font-bold leading-tight truncate">
+                <span style={{ color: '#1f2a44' }}>Cert</span><span style={{ color: '#e8a900' }}>With</span>
+              </p>
               <p className="text-xs text-gray-400 leading-tight truncate">Certification Manager</p>
             </div>
           )}
@@ -251,7 +253,9 @@ export default function SidebarWrapper({
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/certtracker-logo.svg" alt="CertWith" style={{ height: '28px', width: 'auto' }} />
-            <span className="text-sm font-bold text-gray-900">CertWith</span>
+            <span className="text-sm font-bold">
+              <span style={{ color: '#1f2a44' }}>Cert</span><span style={{ color: '#e8a900' }}>With</span>
+            </span>
           </div>
         </div>
 

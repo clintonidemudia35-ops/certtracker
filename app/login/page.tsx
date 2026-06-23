@@ -44,11 +44,15 @@ export default function LoginPage() {
       }
 
     } else if (mode === 'signup') {
-      const { error: authError } = await supabase.auth.signUp({ email, password })
+      const { data: signUpData, error: authError } = await supabase.auth.signUp({ email, password })
       setLoading(false)
       if (authError) {
         setError(friendlyAuthError(authError))
+      } else if (signUpData.session) {
+        // Email confirmation is disabled — session is returned immediately
+        router.push('/onboarding')
       } else {
+        // Fallback: confirmation still required (should not happen in current config)
         setSuccessMsg(`We sent a confirmation link to ${email}. Click it to activate your account.`)
       }
 

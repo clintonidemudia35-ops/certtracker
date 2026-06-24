@@ -176,7 +176,7 @@ export async function GET(request: NextRequest) {
 
       try {
         const result = await resend.emails.send({
-          from:    'CertWith Alerts <onboarding@resend.dev>',
+          from:    'CertWith Alerts <alerts@certwith.com>',
           to:      managerEmail,
           subject,
           text,

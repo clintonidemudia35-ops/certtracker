@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   const userEmail = user.email ?? 'unknown'
 
   const result = await resend.emails.send({
-    from:    'CertWith Support <onboarding@resend.dev>',
+    from:    'CertWith Support <support@certwith.com>',
     to:      'clintidd@gmail.com',
     replyTo: userEmail,
     subject: `CertWith support: ${subject}`,

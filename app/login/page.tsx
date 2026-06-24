@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase-browser'
 
 type Mode = 'signin' | 'signup' | 'forgot'
@@ -18,9 +18,12 @@ function friendlyAuthError(err: { message: string; status?: number }): string {
 }
 
 export default function LoginPage() {
-  const router = useRouter()
+  const router       = useRouter()
+  const searchParams = useSearchParams()
 
-  const [mode, setMode]               = useState<Mode>('signin')
+  const [mode, setMode]               = useState<Mode>(
+    searchParams.get('mode') === 'signup' ? 'signup' : 'signin'
+  )
   const [email, setEmail]             = useState('')
   const [password, setPassword]       = useState('')
   const [showPassword, setShowPassword] = useState(false)

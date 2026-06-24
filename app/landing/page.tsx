@@ -169,7 +169,7 @@ export default function LandingPage() {
             style={{ animationDelay: '240ms' }}
           >
             <Link
-              href="/login"
+              href="/login?mode=signup"
               className="inline-flex items-center gap-2 font-bold text-sm px-7 py-3.5 rounded-xl transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
               style={{ background: YELLOW, color: NAVY, ...heading }}
             >
@@ -314,7 +314,7 @@ export default function LandingPage() {
             Get started free in minutes.
           </p>
           <Link
-            href="/login"
+            href="/login?mode=signup"
             className="inline-flex items-center gap-2 font-bold text-sm px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
             style={{ background: YELLOW, color: NAVY, ...heading }}
           >

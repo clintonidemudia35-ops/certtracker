@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase-browser'
 
@@ -17,7 +17,7 @@ function friendlyAuthError(err: { message: string; status?: number }): string {
   return err.message
 }
 
-export default function LoginPage() {
+function LoginForm() {
   const router       = useRouter()
   const searchParams = useSearchParams()
 
@@ -258,5 +258,14 @@ export default function LoginPage() {
       </main>
 
     </div>
+  )
+}
+
+// useSearchParams() requires a Suspense boundary to allow static prerendering.
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   )
 }

@@ -37,7 +37,8 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Public routes — no auth required
-  const isPublic = pathname === '/' || pathname === '/login' || pathname.startsWith('/landing')
+  // /auth/callback must be reachable without a session so the code-exchange can run
+  const isPublic = pathname === '/' || pathname === '/login' || pathname.startsWith('/landing') || pathname === '/auth/callback'
 
   if (!user && !isPublic) {
     const loginUrl = request.nextUrl.clone()

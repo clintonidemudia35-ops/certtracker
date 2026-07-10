@@ -47,7 +47,11 @@ function LoginForm() {
       }
 
     } else if (mode === 'signup') {
-      const { data: signUpData, error: authError } = await supabase.auth.signUp({ email, password })
+      const { data: signUpData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      })
       setLoading(false)
       if (authError) {
         setError(friendlyAuthError(authError))

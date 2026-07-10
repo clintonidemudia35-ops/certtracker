@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
           .eq('id', user.id)
           .single()
 
-        const destination = profile?.account_type ? '/dashboard' : '/onboarding'
+        const destination = profile?.account_type ? '/dashboard' : '/onboarding?verified=1'
         return NextResponse.redirect(`${origin}${destination}`)
       }
     }

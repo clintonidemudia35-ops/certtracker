@@ -32,10 +32,11 @@ const OPTIONS: { value: AccountType; label: string; description: string; icon: R
 export default function OnboardingPage() {
   const router = useRouter()
 
-  const [userId,  setUserId]  = useState<string | null>(null)
-  const [saving,  setSaving]  = useState(false)
-  const [choice,  setChoice]  = useState<AccountType | null>(null)
-  const [error,   setError]   = useState<string | null>(null)
+  const [userId,         setUserId]         = useState<string | null>(null)
+  const [saving,         setSaving]         = useState(false)
+  const [choice,         setChoice]         = useState<AccountType | null>(null)
+  const [error,          setError]          = useState<string | null>(null)
+  const [showVerified,   setShowVerified]   = useState(false)
 
   useEffect(() => {
     async function init() {
@@ -50,6 +51,11 @@ export default function OnboardingPage() {
         .single()
 
       if (profile?.account_type) { router.replace('/dashboard'); return }
+
+      // Show verified banner only when arriving from the email callback
+      if (new URLSearchParams(window.location.search).get('verified') === '1') {
+        setShowVerified(true)
+      }
 
       setUserId(user.id)
     }
@@ -103,6 +109,27 @@ export default function OnboardingPage() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/certtracker-lockup.svg" alt="CertWith" style={{ width: '180px', height: 'auto' }} />
       </div>
+
+      {/* Verified banner */}
+      {showVerified && (
+        <div className="w-full max-w-xl mb-4 flex items-center justify-between gap-3 bg-green-50 border border-green-200 text-green-800 rounded-xl px-4 py-3 text-sm">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 shrink-0 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Email verified — welcome to CertWith</span>
+          </div>
+          <button
+            onClick={() => setShowVerified(false)}
+            className="shrink-0 text-green-600 hover:text-green-800 transition-colors"
+            aria-label="Dismiss"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {/* Card */}
       <div className="w-full max-w-xl bg-white rounded-2xl border border-gray-200 shadow-sm p-8 sm:p-10">

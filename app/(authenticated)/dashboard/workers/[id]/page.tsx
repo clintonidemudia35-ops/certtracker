@@ -73,11 +73,12 @@ export default function WorkerDetailPage() {
   const router           = useRouter()
 
   // ── Data state ──────────────────────────────────────────────────────────────
-  const [worker,  setWorker]  = useState<Worker | null>(null)
-  const [certs,   setCerts]   = useState<Cert[]>([])
-  const [userId,  setUserId]  = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState<string | null>(null)
+  const [worker,      setWorker]      = useState<Worker | null>(null)
+  const [certs,       setCerts]       = useState<Cert[]>([])
+  const [userId,      setUserId]      = useState<string | null>(null)
+  const [accountType, setAccountType] = useState<string | null>(null)
+  const [loading,     setLoading]     = useState(true)
+  const [error,       setError]       = useState<string | null>(null)
 
   // ── Worker edit state ────────────────────────────────────────────────────────
   const [editingWorker,       setEditingWorker]       = useState(false)
@@ -110,15 +111,24 @@ export default function WorkerDetailPage() {
     if (!user) { router.push('/login'); return }
     setUserId(user.id)
 
-    const [{ data: w, error: wErr }, { data: c }] = await Promise.all([
+    const [{ data: w, error: wErr }, { data: c }, { data: profile }] = await Promise.all([
       supabase.from('workers').select('*').eq('id', workerId).eq('user_id', user.id).single(),
       supabase.from('certificates').select('*').eq('worker_id', workerId).eq('user_id', user.id).order('expiry_date'),
+      supabase.from('profiles').select('account_type').eq('id', user.id).single(),
     ])
 
     if (wErr || !w) { router.push('/dashboard'); return }
     setWorker(w)
     setCerts(c ?? [])
+    setAccountType(profile?.account_type ?? null)
     setLoading(false)
+
+    // Auto-open the inline edit form when arriving from Individual dashboard with ?editCert=<id>
+    const editCertId = new URLSearchParams(window.location.search).get('editCert')
+    if (editCertId && c) {
+      const target = c.find(cert => cert.id === editCertId)
+      if (target) startEditCert(target)
+    }
   }, [workerId, router])
 
   useEffect(() => { load() }, [load])
@@ -315,7 +325,9 @@ export default function WorkerDetailPage() {
           {editingWorker ? (
             // ── Edit worker form ──────────────────────────────────────────
             <form onSubmit={saveWorker} className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">Edit Worker</h3>
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                {accountType === 'individual' ? 'My Details' : 'Edit Worker'}
+              </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
@@ -409,15 +421,17 @@ export default function WorkerDetailPage() {
                   </svg>
                   Edit
                 </button>
-                <button
-                  onClick={() => { setConfirmDeleteWorker(true); setEditingWorker(false) }}
-                  className="flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-700 border border-red-200 hover:border-red-300 px-3 py-1.5 rounded-lg transition-colors"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                  </svg>
-                  Delete Worker
-                </button>
+                {accountType !== 'individual' && (
+                  <button
+                    onClick={() => { setConfirmDeleteWorker(true); setEditingWorker(false) }}
+                    className="flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-700 border border-red-200 hover:border-red-300 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                    </svg>
+                    Delete Worker
+                  </button>
+                )}
               </div>
             </div>
           )}

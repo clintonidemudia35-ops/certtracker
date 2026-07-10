@@ -473,7 +473,7 @@ export default function WorkerDetailPage() {
             </div>
           ) : (
             <table className="w-full text-sm">
-              <thead>
+              <thead className="hidden sm:table-header-group">
                 <tr className="bg-gray-50 border-b border-gray-100 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   <th className="px-6 py-3">Certificate Type</th>
                   <th className="px-6 py-3">Expiry Date</th>
@@ -489,11 +489,11 @@ export default function WorkerDetailPage() {
                   // ── Inline edit row ──────────────────────────────────────
                   if (editingCert?.id === cert.id) {
                     return (
-                      <tr key={cert.id} className="bg-yellow-50">
-                        <td colSpan={4} className="px-6 py-4">
+                      <tr key={cert.id} className="block sm:table-row bg-yellow-50">
+                        <td colSpan={4} className="block sm:table-cell px-4 py-4 sm:px-6">
                           <form onSubmit={saveCert} className="space-y-3">
                             <div className="flex flex-wrap items-end gap-3">
-                              <div className="flex-1 min-w-48">
+                              <div className="min-w-0 w-full sm:flex-1 sm:min-w-48">
                                 <label className="block text-xs font-medium text-gray-600 mb-1">Certificate Type</label>
                                 <select
                                   required={editCertSelectValue !== '__custom__'}
@@ -601,8 +601,8 @@ export default function WorkerDetailPage() {
                   // ── Delete confirmation row ──────────────────────────────
                   if (confirmDeleteCert?.id === cert.id) {
                     return (
-                      <tr key={cert.id} className="bg-red-50">
-                        <td colSpan={4} className="px-6 py-4">
+                      <tr key={cert.id} className="block sm:table-row bg-red-50">
+                        <td colSpan={4} className="block sm:table-cell px-4 py-4 sm:px-6">
                           <div className="flex items-center gap-4">
                             <p className="text-sm text-gray-700">
                               Delete <span className="font-semibold">{cert.certificate_type}</span>? This cannot be undone.
@@ -634,16 +634,23 @@ export default function WorkerDetailPage() {
                     <tr
                       key={cert.id}
                       onClick={() => startEditCert(cert)}
-                      className="hover:bg-gray-50 transition-colors cursor-pointer"
+                      className="flex flex-col sm:table-row hover:bg-gray-50 transition-colors cursor-pointer"
                     >
-                      <td className="px-6 py-4 font-medium text-gray-900">{cert.certificate_type}</td>
-                      <td className="px-6 py-4 text-gray-600">{fmtDate(cert.expiry_date)}</td>
-                      <td className="px-6 py-4">
+                      <td className="flex items-center justify-between gap-4 px-4 py-2 sm:table-cell sm:px-6 sm:py-4 font-medium text-gray-900">
+                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide sm:hidden">Type</span>
+                        <span>{cert.certificate_type}</span>
+                      </td>
+                      <td className="flex items-center justify-between gap-4 px-4 py-2 sm:table-cell sm:px-6 sm:py-4 text-gray-600">
+                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide sm:hidden">Expiry</span>
+                        <span>{fmtDate(cert.expiry_date)}</span>
+                      </td>
+                      <td className="flex items-center justify-between gap-4 px-4 py-2 sm:table-cell sm:px-6 sm:py-4">
+                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide sm:hidden">Status</span>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClasses(status)}`}>
                           {status}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 pb-3 pt-1 sm:table-cell sm:px-6 sm:py-4">
                         <div className="flex items-center justify-end gap-2">
                           {cert.file_path && (
                             <button
@@ -653,6 +660,12 @@ export default function WorkerDetailPage() {
                               View
                             </button>
                           )}
+                          <button
+                            onClick={e => { e.stopPropagation(); startEditCert(cert) }}
+                            className="text-xs font-medium text-gray-500 hover:text-gray-900 border border-gray-200 hover:border-gray-300 px-2.5 py-1 rounded-md transition-colors"
+                          >
+                            Edit
+                          </button>
                           <button
                             onClick={e => { e.stopPropagation(); setConfirmDeleteCert(cert); setEditingCert(null) }}
                             className="text-xs font-medium text-red-500 hover:text-red-700 border border-red-200 hover:border-red-300 px-2.5 py-1 rounded-md transition-colors"
@@ -667,10 +680,10 @@ export default function WorkerDetailPage() {
 
                 {/* ── Add certificate inline form ──────────────────────── */}
                 {showAddCert && (
-                  <tr className="bg-yellow-50">
-                    <td colSpan={4} className="px-6 py-4">
+                  <tr className="block sm:table-row bg-yellow-50">
+                    <td colSpan={4} className="block sm:table-cell px-4 py-4 sm:px-6">
                       <form onSubmit={addCert} className="flex flex-wrap items-end gap-3">
-                        <div className="flex-1 min-w-48">
+                        <div className="min-w-0 w-full sm:flex-1 sm:min-w-48">
                           <label className="block text-xs font-medium text-gray-600 mb-1">Certificate Type</label>
                           <select
                             required={newCertSelectValue !== '__custom__'}

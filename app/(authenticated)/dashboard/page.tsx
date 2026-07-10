@@ -211,7 +211,7 @@ export default async function DashboardPage() {
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
 
         {/* Page title */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-2xl font-semibold text-gray-900">Dashboard</h2>
             <p className="text-sm text-gray-500 mt-1">Overview of your workforce compliance status</p>

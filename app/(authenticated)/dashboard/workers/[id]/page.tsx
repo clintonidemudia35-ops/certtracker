@@ -490,7 +490,7 @@ export default function WorkerDetailPage() {
                   if (editingCert?.id === cert.id) {
                     return (
                       <tr key={cert.id} className="block sm:table-row bg-yellow-50">
-                        <td colSpan={4} className="block sm:table-cell px-4 py-4 sm:px-6">
+                        <td colSpan={4} className="block w-full sm:table-cell px-4 py-4 sm:px-6">
                           <form onSubmit={saveCert} className="space-y-3">
                             <div className="flex flex-wrap items-end gap-3">
                               <div className="min-w-0 w-full sm:flex-1 sm:min-w-48">
@@ -602,7 +602,7 @@ export default function WorkerDetailPage() {
                   if (confirmDeleteCert?.id === cert.id) {
                     return (
                       <tr key={cert.id} className="block sm:table-row bg-red-50">
-                        <td colSpan={4} className="block sm:table-cell px-4 py-4 sm:px-6">
+                        <td colSpan={4} className="block w-full sm:table-cell px-4 py-4 sm:px-6">
                           <div className="flex items-center gap-4">
                             <p className="text-sm text-gray-700">
                               Delete <span className="font-semibold">{cert.certificate_type}</span>? This cannot be undone.
@@ -681,7 +681,7 @@ export default function WorkerDetailPage() {
                 {/* ── Add certificate inline form ──────────────────────── */}
                 {showAddCert && (
                   <tr className="block sm:table-row bg-yellow-50">
-                    <td colSpan={4} className="block sm:table-cell px-4 py-4 sm:px-6">
+                    <td colSpan={4} className="block w-full sm:table-cell px-4 py-4 sm:px-6">
                       <form onSubmit={addCert} className="flex flex-wrap items-end gap-3">
                         <div className="min-w-0 w-full sm:flex-1 sm:min-w-48">
                           <label className="block text-xs font-medium text-gray-600 mb-1">Certificate Type</label>

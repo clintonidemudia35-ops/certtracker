@@ -38,6 +38,7 @@ const CERT_TYPE_GROUPS: Record<string, string[]> = {
   'Australia':     ['White Card','Working at Heights','EWP Licence'],
   'Canada':        ['WHMIS','Fall Protection','First Aid'],
 }
+const CERT_TYPES = Object.values(CERT_TYPE_GROUPS).flat()
 
 // ─── Shared UI atoms ──────────────────────────────────────────────────────────
 

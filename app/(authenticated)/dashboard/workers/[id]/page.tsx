@@ -38,7 +38,6 @@ const CERT_TYPE_GROUPS: Record<string, string[]> = {
   'Australia':     ['White Card','Working at Heights','EWP Licence'],
   'Canada':        ['WHMIS','Fall Protection','First Aid'],
 }
-const CERT_TYPES = Object.values(CERT_TYPE_GROUPS).flat()
 
 // ─── Shared UI atoms ──────────────────────────────────────────────────────────
 
@@ -100,7 +99,8 @@ export default function WorkerDetailPage() {
   const [confirmDeleteCert,   setConfirmDeleteCert]   = useState<Cert | null>(null)
   const [deletingCert,        setDeletingCert]        = useState(false)
   const [showAddCert,         setShowAddCert]         = useState(false)
-  const [newCertType,         setNewCertType]         = useState('')
+  const [newCertSelectValue,  setNewCertSelectValue]  = useState('')
+  const [newCertCustom,       setNewCertCustom]       = useState('')
   const [newCertExpiry,       setNewCertExpiry]       = useState('')
 
   const editFileInputRef = useRef<HTMLInputElement>(null)
@@ -265,16 +265,19 @@ export default function WorkerDetailPage() {
   async function addCert(e: React.FormEvent) {
     e.preventDefault()
     if (!worker || !userId) return
+    const certType = newCertSelectValue === '__custom__' ? newCertCustom.trim() : newCertSelectValue
+    if (!certType) return
     setSavingCert(true)
     setError(null)
     const { data, error: err } = await supabase
       .from('certificates')
-      .insert([{ worker_id: worker.id, certificate_type: newCertType, expiry_date: newCertExpiry, user_id: userId }])
+      .insert([{ worker_id: worker.id, certificate_type: certType, expiry_date: newCertExpiry, user_id: userId }])
       .select().single()
     setSavingCert(false)
     if (err) { setError(err.message); return }
     setCerts(prev => [...prev, data].sort((a, b) => a.expiry_date.localeCompare(b.expiry_date)))
-    setNewCertType('')
+    setNewCertSelectValue('')
+    setNewCertCustom('')
     setNewCertExpiry('')
     setShowAddCert(false)
   }
@@ -404,7 +407,7 @@ export default function WorkerDetailPage() {
 
           ) : (
             // ── Worker info display ───────────────────────────────────────
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">{worker.name}</h2>
                 {worker.phone && (
@@ -520,7 +523,7 @@ export default function WorkerDetailPage() {
                                   />
                                 )}
                               </div>
-                              <div>
+                              <div className="w-full sm:w-auto">
                                 <label className="block text-xs font-medium text-gray-600 mb-1">Expiry Date</label>
                                 <input
                                   required
@@ -670,19 +673,36 @@ export default function WorkerDetailPage() {
                       <form onSubmit={addCert} className="flex flex-wrap items-end gap-3">
                         <div className="flex-1 min-w-48">
                           <label className="block text-xs font-medium text-gray-600 mb-1">Certificate Type</label>
-                          <input
-                            required
-                            list="cert-types-add"
-                            value={newCertType}
-                            onChange={e => setNewCertType(e.target.value)}
-                            className={inputCls()}
-                            placeholder="e.g. CSCS Gold Card"
-                          />
-                          <datalist id="cert-types-add">
-                            {CERT_TYPES.map(t => <option key={t} value={t} />)}
-                          </datalist>
+                          <select
+                            required={newCertSelectValue !== '__custom__'}
+                            value={newCertSelectValue}
+                            onChange={e => {
+                              setNewCertSelectValue(e.target.value)
+                              if (e.target.value !== '__custom__') setNewCertCustom('')
+                            }}
+                            className={`${inputCls()} bg-white`}
+                          >
+                            <option value="">Select type...</option>
+                            {Object.entries(CERT_TYPE_GROUPS).map(([region, types]) => (
+                              <optgroup key={region} label={region}>
+                                {types.map(t => <option key={t} value={t}>{t}</option>)}
+                              </optgroup>
+                            ))}
+                            <option value="__custom__">Custom certificate...</option>
+                          </select>
+                          {newCertSelectValue === '__custom__' && (
+                            <input
+                              type="text"
+                              required
+                              autoFocus
+                              value={newCertCustom}
+                              onChange={e => setNewCertCustom(e.target.value)}
+                              placeholder="Certificate name"
+                              className={`mt-1.5 ${inputCls()}`}
+                            />
+                          )}
                         </div>
-                        <div>
+                        <div className="w-full sm:w-auto">
                           <label className="block text-xs font-medium text-gray-600 mb-1">Expiry Date</label>
                           <input
                             required

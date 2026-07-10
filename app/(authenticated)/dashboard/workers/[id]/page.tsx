@@ -631,7 +631,11 @@ export default function WorkerDetailPage() {
 
                   // ── Normal display row ───────────────────────────────────
                   return (
-                    <tr key={cert.id} className="hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={cert.id}
+                      onClick={() => startEditCert(cert)}
+                      className="hover:bg-gray-50 transition-colors cursor-pointer"
+                    >
                       <td className="px-6 py-4 font-medium text-gray-900">{cert.certificate_type}</td>
                       <td className="px-6 py-4 text-gray-600">{fmtDate(cert.expiry_date)}</td>
                       <td className="px-6 py-4">
@@ -643,20 +647,14 @@ export default function WorkerDetailPage() {
                         <div className="flex items-center justify-end gap-2">
                           {cert.file_path && (
                             <button
-                              onClick={() => viewDocument(cert)}
+                              onClick={e => { e.stopPropagation(); viewDocument(cert) }}
                               className="text-xs font-medium text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-300 px-2.5 py-1 rounded-md transition-colors"
                             >
                               View
                             </button>
                           )}
                           <button
-                            onClick={() => startEditCert(cert)}
-                            className="text-xs font-medium text-gray-500 hover:text-gray-900 border border-gray-200 hover:border-gray-300 px-2.5 py-1 rounded-md transition-colors"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => { setConfirmDeleteCert(cert); setEditingCert(null) }}
+                            onClick={e => { e.stopPropagation(); setConfirmDeleteCert(cert); setEditingCert(null) }}
                             className="text-xs font-medium text-red-500 hover:text-red-700 border border-red-200 hover:border-red-300 px-2.5 py-1 rounded-md transition-colors"
                           >
                             Delete

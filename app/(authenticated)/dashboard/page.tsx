@@ -140,31 +140,41 @@ export default async function DashboardPage() {
                       <th className="px-6 py-3">Certificate Type</th>
                       <th className="px-6 py-3">Expiry Date</th>
                       <th className="px-6 py-3">Status</th>
+                      <th className="px-6 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {certList.map((cert) => {
-                      const status   = getCertStatus(cert.expiry_date)
-                      const editHref = selfWorker ? `/dashboard/workers/${selfWorker.id}?editCert=${cert.id}` : '#'
+                      const status     = getCertStatus(cert.expiry_date)
+                      const workerHref = selfWorker ? `/dashboard/workers/${selfWorker.id}` : '#'
+                      const editHref   = selfWorker ? `/dashboard/workers/${selfWorker.id}?editCert=${cert.id}` : '#'
                       return (
-                        <tr key={cert.id} className="hover:bg-yellow-50 transition-colors cursor-pointer">
+                        <tr key={cert.id} className="hover:bg-yellow-50 transition-colors">
                           <td className="font-medium text-gray-900">
-                            <Link href={editHref} className="block px-6 py-4">
+                            <Link href={workerHref} className="block px-6 py-4">
                               {cert.certificate_type}
                             </Link>
                           </td>
                           <td className="text-gray-600">
-                            <Link href={editHref} className="block px-6 py-4">
+                            <Link href={workerHref} className="block px-6 py-4">
                               {new Date(cert.expiry_date).toLocaleDateString('en-GB', {
                                 day: '2-digit', month: 'short', year: 'numeric',
                               })}
                             </Link>
                           </td>
                           <td>
-                            <Link href={editHref} className="block px-6 py-4">
+                            <Link href={workerHref} className="block px-6 py-4">
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusBadge(status)}`}>
                                 {status}
                               </span>
+                            </Link>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <Link
+                              href={editHref}
+                              className="text-xs font-medium text-gray-500 hover:text-gray-900 border border-gray-200 hover:border-gray-300 px-2.5 py-1 rounded-md transition-colors"
+                            >
+                              Edit
                             </Link>
                           </td>
                         </tr>

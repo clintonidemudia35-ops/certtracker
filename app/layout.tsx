@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Plus_Jakarta_Sans, Inter } from "next/font/google"
 import "./globals.css"
 
@@ -16,6 +16,12 @@ const inter = Inter({
   display: "swap",
 })
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+}
+
 export const metadata: Metadata = {
   title: "CertWith",
   description: "Track worker certifications and stay compliant.",
@@ -30,8 +36,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${jakarta.variable} ${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className={`${jakarta.variable} ${inter.variable} h-full antialiased overflow-x-hidden`}>
+      <body className="min-h-full flex flex-col overflow-x-hidden">{children}</body>
     </html>
   )
 }

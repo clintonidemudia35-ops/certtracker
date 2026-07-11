@@ -56,7 +56,7 @@ export default async function DashboardPage() {
     const compliant     = certList.filter(c => getCertStatus(c.expiry_date) === 'Compliant').length
 
     return (
-      <div className="bg-gray-50 min-h-full">
+      <div className="bg-gray-50 min-h-full overflow-x-hidden">
         <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
 
           {/* Header */}
@@ -207,7 +207,7 @@ export default async function DashboardPage() {
   }).length
 
   return (
-    <div className="bg-gray-50 min-h-full">
+    <div className="bg-gray-50 min-h-full overflow-x-hidden">
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
 
         {/* Page title */}

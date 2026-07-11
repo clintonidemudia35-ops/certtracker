@@ -531,7 +531,7 @@ export default function WorkerDetailPage() {
                                   type="date"
                                   value={editCertExpiry}
                                   onChange={e => setEditCertExpiry(e.target.value)}
-                                  className={`${inputCls()} max-w-full`}
+                                  className={`${inputCls()} max-w-full min-w-0`}
                                 />
                               </div>
                               <div className="flex items-center gap-2">
@@ -721,7 +721,7 @@ export default function WorkerDetailPage() {
                             type="date"
                             value={newCertExpiry}
                             onChange={e => setNewCertExpiry(e.target.value)}
-                            className={`${inputCls()} max-w-full`}
+                            className={`${inputCls()} max-w-full min-w-0`}
                           />
                         </div>
                         <div className="flex items-center gap-2">

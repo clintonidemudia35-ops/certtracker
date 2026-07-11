@@ -297,7 +297,8 @@ export default async function DashboardPage() {
             <p className="text-sm text-gray-500">All workers and their latest certification status</p>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="relative">
+            <div className="overflow-x-auto">
             {rows.length === 0 ? (
               <div className="px-6 py-12 text-center text-sm text-gray-400">
                 No workers found.{' '}
@@ -351,6 +352,10 @@ export default async function DashboardPage() {
                   })}
                 </tbody>
               </table>
+            )}
+            </div>
+            {rows.length > 0 && (
+              <div className="sm:hidden pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-r from-transparent to-white" />
             )}
           </div>
         </div>

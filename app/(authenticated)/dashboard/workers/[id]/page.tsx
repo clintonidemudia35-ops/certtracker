@@ -524,14 +524,14 @@ export default function WorkerDetailPage() {
                                   />
                                 )}
                               </div>
-                              <div className="min-w-0 w-full sm:w-auto">
+                              <div className="min-w-0 w-full sm:flex-1 sm:min-w-48">
                                 <label className="block text-xs font-medium text-gray-600 mb-1">Expiry Date</label>
                                 <input
                                   required
                                   type="date"
                                   value={editCertExpiry}
                                   onChange={e => setEditCertExpiry(e.target.value)}
-                                  className={`${inputCls()} box-border`}
+                                  className={inputCls()}
                                 />
                               </div>
                               <div className="flex items-center gap-2">
@@ -714,14 +714,14 @@ export default function WorkerDetailPage() {
                             />
                           )}
                         </div>
-                        <div className="min-w-0 w-full sm:w-auto">
+                        <div className="min-w-0 w-full sm:flex-1 sm:min-w-48">
                           <label className="block text-xs font-medium text-gray-600 mb-1">Expiry Date</label>
                           <input
                             required
                             type="date"
                             value={newCertExpiry}
                             onChange={e => setNewCertExpiry(e.target.value)}
-                            className={`${inputCls()} box-border`}
+                            className={inputCls()}
                           />
                         </div>
                         <div className="flex items-center gap-2">

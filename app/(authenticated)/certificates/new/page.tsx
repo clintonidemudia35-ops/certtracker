@@ -272,6 +272,7 @@ export default function NewCertificatePage() {
                 onChange={(e) => setExpiryDate(e.target.value)}
                 required
                 className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition"
+                style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', WebkitAppearance: 'none', appearance: 'none' }}
               />
             </div>
 

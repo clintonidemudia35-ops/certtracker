@@ -532,6 +532,7 @@ export default function WorkerDetailPage() {
                                   value={editCertExpiry}
                                   onChange={e => setEditCertExpiry(e.target.value)}
                                   className={inputCls()}
+                                  style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', WebkitAppearance: 'none', appearance: 'none' }}
                                 />
                               </div>
                               <div className="flex items-center gap-2">
@@ -722,6 +723,7 @@ export default function WorkerDetailPage() {
                             value={newCertExpiry}
                             onChange={e => setNewCertExpiry(e.target.value)}
                             className={inputCls()}
+                            style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', WebkitAppearance: 'none', appearance: 'none' }}
                           />
                         </div>
                         <div className="flex items-center gap-2">

@@ -6,6 +6,70 @@ import { supabase } from '@/lib/supabase-browser'
 
 type Mode = 'signin' | 'signup' | 'forgot'
 
+// ─── Signup email validation ───────────────────────────────────────────────────
+
+const DISPOSABLE_DOMAINS = new Set([
+  'mailinator.com', 'mailinator.net',
+  'guerrillamail.com', 'guerrillamail.net', 'guerrillamail.org', 'guerrillamail.info',
+  'sharklasers.com', 'guerrillamailblock.com', 'grr.la', 'spam4.me',
+  'yopmail.com', 'yopmail.fr',
+  'trashmail.com', 'trashmail.me', 'trashmail.net', 'trashmail.io',
+  'dispostable.com', 'discard.email',
+  'tempmail.com', 'temp-mail.org', 'temp-mail.io',
+  'throwam.com', 'throwaway.email',
+  'fakeinbox.com', 'mailnesia.com', 'maildrop.cc',
+  'mailnull.com', 'mailsac.com',
+  'spamgourmet.com', 'spamgourmet.net',
+  'getairmail.com', 'mohmal.com',
+])
+
+const DOMAIN_TYPOS: Record<string, string> = {
+  'gmial.com':    'gmail.com',
+  'gmai.com':     'gmail.com',
+  'gamil.com':    'gmail.com',
+  'gmail.co':     'gmail.com',
+  'gmaill.com':   'gmail.com',
+  'gnail.com':    'gmail.com',
+  'gmail.con':    'gmail.com',
+  'hotmial.com':  'hotmail.com',
+  'htomail.com':  'hotmail.com',
+  'hotmail.co':   'hotmail.com',
+  'hotmaill.com': 'hotmail.com',
+  'hotmail.con':  'hotmail.com',
+  'yahooo.com':   'yahoo.com',
+  'yaho.com':     'yahoo.com',
+  'yaoo.com':     'yahoo.com',
+  'yahoo.co':     'yahoo.com',
+  'yahoo.con':    'yahoo.com',
+  'outlok.com':   'outlook.com',
+  'outllook.com': 'outlook.com',
+  'outloook.com': 'outlook.com',
+  'outlook.co':   'outlook.com',
+  'iclod.com':    'icloud.com',
+  'icould.com':   'icloud.com',
+  'icloud.co':    'icloud.com',
+}
+
+function validateSignupEmail(raw: string): string | null {
+  const email  = raw.trim()
+  const valid  = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)
+  if (!valid) return 'Please enter a valid email address.'
+
+  const domain = email.split('@')[1].toLowerCase()
+
+  if (DISPOSABLE_DOMAINS.has(domain)) {
+    return 'Please use a permanent email address — temporary or disposable addresses are not accepted.'
+  }
+
+  const correction = DOMAIN_TYPOS[domain]
+  if (correction) {
+    const local = email.split('@')[0]
+    return `Did you mean ${local}@${correction}? Please correct your email address.`
+  }
+
+  return null
+}
+
 function friendlyAuthError(err: { message: string; status?: number }): string {
   if (
     err.status === 429 ||
@@ -47,6 +111,13 @@ function LoginForm() {
       }
 
     } else if (mode === 'signup') {
+      const emailError = validateSignupEmail(email)
+      if (emailError) {
+        setLoading(false)
+        setError(emailError)
+        return
+      }
+
       const { data: signUpData, error: authError } = await supabase.auth.signUp({
         email,
         password,
